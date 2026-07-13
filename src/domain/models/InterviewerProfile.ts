@@ -21,7 +21,7 @@ export const INTERVIEWERS: InterviewerProfile[] = [
     voiceName: 'Emma',
     voiceGender: 'female',
     color: '#4CAF50',
-    description: 'CV, культура компанії, м\'які запитання про досвід.',
+    description: 'Soft skills, мотивація, базові технічні знання.',
     riveFile: 'avatar_recruiter.riv',
   },
   {
@@ -31,7 +31,7 @@ export const INTERVIEWERS: InterviewerProfile[] = [
     voiceName: 'Olivia',
     voiceGender: 'female',
     color: '#2196F3',
-    description: 'Поведінкові запитання, командна робота, конфлікти.',
+    description: 'Культурний фіт, командна взаємодія.',
     riveFile: 'avatar_hr.riv',
   },
   {

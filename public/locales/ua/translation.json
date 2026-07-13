@@ -16,10 +16,10 @@
   },
   "interviewers": {
     "recruiter": {
-      "description": "CV, культура компанії, salary-очікування"
+      "description": "Soft skills, мотивація та базові технічні знання"
     },
     "hr": {
-      "description": "Поведінкові запитання, командна робота, soft skills"
+      "description": "Культурний фіт та командна взаємодія"
     },
     "senior-devops": {
       "description": "CI/CD, Kubernetes, IaC, інциденти та спостережуваність"

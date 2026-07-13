@@ -153,9 +153,12 @@ export const RECRUITER_QUESTIONS: BankQuestion[] = [
   },
 ]
 
-// HR (Medium) — the rest of Junior: Networks, Clouds, Automation, Security,
-// Virtualization, CI/CD, Development, Monitoring/Logging, Practical.
-export const HR_QUESTIONS: BankQuestion[] = [
+// Recruiter's remaining Junior-level technical bank (basic-knowledge check):
+// Networks, Clouds, Automation, Security, Virtualization, CI/CD,
+// Development, Monitoring/Logging, Practical. Recruiter's role per spec is
+// "soft skills, motivation, and basic knowledge" — so all Junior technical
+// content lives here, not under HR.
+export const RECRUITER_JUNIOR_EXTRA_QUESTIONS: BankQuestion[] = [
   {
     id: 'j-networks-28',
     category: 'networks',
@@ -428,6 +431,192 @@ export const HR_QUESTIONS: BankQuestion[] = [
     level: 'junior',
     ua: 'Практична сесія роботи з Git (Git command line: fetch, push, pull, rebase, checkout, submodules).',
     en: 'A practical Git session (command line: fetch, push, pull, rebase, checkout, submodules).',
+  },
+]
+
+// Recruiter's soft-skills/motivation bank — first-round screening questions,
+// not technical at all. Matches Recruiter's role: "soft skills, motivation,
+// and basic knowledge".
+export const RECRUITER_MOTIVATION_QUESTIONS: BankQuestion[] = [
+  {
+    id: 'r-motivation-1',
+    category: 'motivation',
+    level: 'junior',
+    ua: 'Розкажіть трохи про себе та свій шлях у DevOps.',
+    en: 'Tell me a bit about yourself and your path into DevOps.',
+  },
+  {
+    id: 'r-motivation-2',
+    category: 'motivation',
+    level: 'junior',
+    ua: 'Чому вас цікавить саме DevOps, а не, наприклад, розробка чи класичний sysadmin?',
+    en: 'Why are you interested in DevOps specifically, rather than development or classic sysadmin work?',
+  },
+  {
+    id: 'r-motivation-3',
+    category: 'motivation',
+    level: 'junior',
+    ua: 'Що вас мотивує у роботі найбільше — які задачі приносять найбільше задоволення?',
+    en: 'What motivates you most at work — which kinds of tasks bring you the most satisfaction?',
+  },
+  {
+    id: 'r-motivation-4',
+    category: 'motivation',
+    level: 'junior',
+    ua: 'Які ваші очікування щодо заробітної плати на цій позиції?',
+    en: 'What are your salary expectations for this position?',
+  },
+  {
+    id: 'r-motivation-5',
+    category: 'motivation',
+    level: 'junior',
+    ua: 'Яке робоче середовище є для вас ідеальним (команда, темп, підтримка)?',
+    en: 'What does your ideal work environment look like (team, pace, support)?',
+  },
+  {
+    id: 'r-motivation-6',
+    category: 'motivation',
+    level: 'junior',
+    ua: 'Де ви бачите себе у професійному плані через 3-5 років?',
+    en: 'Where do you see yourself professionally in 3-5 years?',
+  },
+  {
+    id: 'r-motivation-7',
+    category: 'motivation',
+    level: 'junior',
+    ua: 'Чому ви розглядаєте зміну поточного місця роботи?',
+    en: 'Why are you considering leaving your current job?',
+  },
+  {
+    id: 'r-motivation-8',
+    category: 'motivation',
+    level: 'junior',
+    ua: 'Що ви знаєте про нашу компанію, і чому хочете працювати саме тут?',
+    en: 'What do you know about our company, and why do you want to work here specifically?',
+  },
+  {
+    id: 'r-motivation-9',
+    category: 'motivation',
+    level: 'junior',
+    ua: 'Чи готові ви до релокації або до повністю віддаленого формату роботи?',
+    en: 'Are you open to relocation, or fully remote work arrangements?',
+  },
+  {
+    id: 'r-motivation-10',
+    category: 'motivation',
+    level: 'junior',
+    ua: 'Коли ви готові розпочати роботу, якщо отримаєте пропозицію?',
+    en: 'When would you be available to start, if offered the role?',
+  },
+]
+
+// HR Manager's bank — culture fit and team-interaction only, no technical
+// trivia at all. Matches HR's role: "culture fit, team interaction".
+export const HR_QUESTIONS: BankQuestion[] = [
+  {
+    id: 'hr-behavioral-1',
+    category: 'behavioral',
+    level: 'junior',
+    ua: 'Розкажіть про конфлікт із колегою по команді та як ви його вирішили.',
+    en: 'Tell me about a conflict with a teammate and how you resolved it.',
+  },
+  {
+    id: 'hr-behavioral-2',
+    category: 'behavioral',
+    level: 'junior',
+    ua: 'Як ви дієте, коли пріоритети різних зацікавлених сторін суперечать один одному?',
+    en: 'How do you act when priorities from different stakeholders conflict with each other?',
+  },
+  {
+    id: 'hr-behavioral-3',
+    category: 'behavioral',
+    level: 'junior',
+    ua: 'Яка командна культура є для вас ідеальною?',
+    en: 'What does an ideal team culture look like to you?',
+  },
+  {
+    id: 'hr-behavioral-4',
+    category: 'behavioral',
+    level: 'junior',
+    ua: 'Як ви зазвичай надаєте та приймаєте зворотний зв\'язок від колег?',
+    en: 'How do you typically give and receive feedback from colleagues?',
+  },
+  {
+    id: 'hr-behavioral-5',
+    category: 'behavioral',
+    level: 'junior',
+    ua: 'Опишіть ситуацію, коли команді довелось працювати під сильним тиском дедлайну.',
+    en: 'Describe a situation where the team had to work under significant deadline pressure.',
+  },
+  {
+    id: 'hr-behavioral-6',
+    category: 'behavioral',
+    level: 'junior',
+    ua: 'Як ви справляєтесь зі стресом та вигоранням під час чергувань (on-call)?',
+    en: 'How do you cope with stress and burnout during on-call rotations?',
+  },
+  {
+    id: 'hr-behavioral-7',
+    category: 'behavioral',
+    level: 'junior',
+    ua: 'Як би ви пояснили складну технічну проблему нетехнічному керівнику?',
+    en: 'How would you explain a complex technical issue to a non-technical manager?',
+  },
+  {
+    id: 'hr-behavioral-8',
+    category: 'behavioral',
+    level: 'junior',
+    ua: 'Як ви будуєте співпрацю між командами розробки та експлуатації (Dev і Ops)?',
+    en: 'How do you build collaboration between development and operations (Dev and Ops) teams?',
+  },
+  {
+    id: 'hr-behavioral-9',
+    category: 'behavioral',
+    level: 'junior',
+    ua: 'Розкажіть про помилку, яку ви зробили на роботі, і чого вона вас навчила.',
+    en: 'Tell me about a mistake you made at work and what it taught you.',
+  },
+  {
+    id: 'hr-behavioral-10',
+    category: 'behavioral',
+    level: 'junior',
+    ua: 'Яка форма визнання досягнень найбільше мотивує вас у команді?',
+    en: 'What form of recognition for achievements motivates you most within a team?',
+  },
+  {
+    id: 'hr-behavioral-11',
+    category: 'behavioral',
+    level: 'junior',
+    ua: 'Як ви поводитесь, коли не погоджуєтесь із технічним рішенням колеги?',
+    en: 'How do you behave when you disagree with a colleague\'s technical decision?',
+  },
+  {
+    id: 'hr-behavioral-12',
+    category: 'behavioral',
+    level: 'junior',
+    ua: 'Чи доводилось вам навчати або менторити молодших колег? Як це відбувалось?',
+    en: 'Have you ever mentored or onboarded junior colleagues? How did that go?',
+  },
+  {
+    id: 'hr-behavioral-13',
+    category: 'behavioral',
+    level: 'junior',
+    ua: 'Як ви зберігаєте мотивацію під час рутинної підтримувальної роботи?',
+    en: 'How do you stay motivated during repetitive maintenance work?',
+  },
+  {
+    id: 'hr-behavioral-14',
+    category: 'behavioral',
+    level: 'junior',
+    ua: 'Розкажіть про випадок, коли вам довелось відмовити керівництву в запиті.',
+    en: 'Tell me about a time you had to say no to a request from management.',
+  },
+  {
+    id: 'hr-behavioral-15',
+    category: 'behavioral',
+    level: 'junior',
+    ua: 'Як ви підтримуєте баланс між роботою та особистим життям під час чергувань?',
+    en: 'How do you maintain work-life balance during on-call rotations?',
   },
 ]
 
@@ -1587,7 +1776,7 @@ export const CTO_QUESTIONS: BankQuestion[] = [
 ]
 
 export const QUESTION_BANKS: Record<string, BankQuestion[]> = {
-  recruiter: RECRUITER_QUESTIONS,
+  recruiter: [...RECRUITER_QUESTIONS, ...RECRUITER_JUNIOR_EXTRA_QUESTIONS, ...RECRUITER_MOTIVATION_QUESTIONS],
   hr: HR_QUESTIONS,
   'senior-devops': SENIOR_DEVOPS_QUESTIONS,
   cto: CTO_QUESTIONS,

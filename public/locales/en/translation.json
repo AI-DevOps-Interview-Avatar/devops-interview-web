@@ -16,10 +16,10 @@
   },
   "interviewers": {
     "recruiter": {
-      "description": "CV review, company culture, salary expectations"
+      "description": "Soft skills, motivation and basic technical knowledge"
     },
     "hr": {
-      "description": "Behavioral questions, team dynamics, soft skills"
+      "description": "Culture fit and team interaction"
     },
     "senior-devops": {
       "description": "CI/CD, Kubernetes, IaC, incidents and observability"
