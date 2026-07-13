@@ -19,7 +19,7 @@ export interface SessionAssessment {
  * completed and how much the candidate wrote per answer.
  */
 export function assessSession(messages: ChatMessage[], selectedQuestions: BankQuestion[]): SessionAssessment {
-  const askedCount = messages.filter((m) => m.author === 'interviewer').length
+  const askedCount = messages.filter((m) => m.author === 'interviewer' && 'questionIndex' in m).length
   const userAnswers = messages.filter((m) => m.author === 'user')
   const answeredCount = userAnswers.length
 

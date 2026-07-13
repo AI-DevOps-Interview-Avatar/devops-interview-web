@@ -57,9 +57,25 @@ export default function MeetSessionPage() {
     const questions = shuffle(bank).slice(0, MAX_QUESTIONS)
     historySavedRef.current = false
     dispatch(startInterview({ interviewerId, questions }))
-    backendRef.current.init().then(() => {
-      if (!cancelled) askNextQuestion(0, questions)
-    })
+
+    async function run() {
+      await backendRef.current.init()
+      if (cancelled) return
+      const profile = INTERVIEWERS.find((i) => i.id === interviewerId)
+      if (profile) {
+        setStreaming('')
+        const greetingText = t(`interviewers.${interviewerId}.greeting`, { name: profile.voiceName })
+        const full = await backendRef.current.generate(greetingText, (token) => setStreaming((prev) => prev + token))
+        if (cancelled) return
+        dispatch(addMessage({ author: 'interviewer', greeting: true }))
+        setStreaming('')
+        await new Promise<void>((resolve) => speak(full, lang, profile.voiceGender, resolve))
+        if (cancelled) return
+      }
+      askNextQuestion(0, questions)
+    }
+    run()
+
     return () => {
       cancelled = true
       stopSpeaking()
@@ -99,13 +115,17 @@ export default function MeetSessionPage() {
     }
   }
 
-  function handleSend() {
-    if (!draft.trim()) return
-    dispatch(addMessage({ author: 'user', text: draft.trim() }))
+  function sendMessage(text: string) {
+    if (!text.trim()) return
+    dispatch(addMessage({ author: 'user', text: text.trim() }))
     setDraft('')
     if (questionCount < MAX_QUESTIONS) {
       askNextQuestion(questionCount)
     }
+  }
+
+  function handleSend() {
+    sendMessage(draft)
   }
 
   function handleHangup() {
@@ -121,7 +141,13 @@ export default function MeetSessionPage() {
     stopSpeaking()
     const handle = startListening(
       lang,
-      (transcript) => setDraft((prev) => (prev ? `${prev} ${transcript}` : transcript)),
+      (transcript) => {
+        // Voice answers are one-shot (interimResults=false): the moment we
+        // get a final transcript, send it — don't leave it sitting in the
+        // input box waiting for a manual "Send" click.
+        const combined = draft ? `${draft} ${transcript}` : transcript
+        sendMessage(combined)
+      },
       () => {
         setListening(false)
         listeningHandleRef.current = null
@@ -142,12 +168,17 @@ export default function MeetSessionPage() {
     return <p>Interviewer not found.</p>
   }
 
+  const voiceName = interviewer.voiceName
+  function interviewerMessageText(m: { author: 'interviewer'; questionIndex: number } | { author: 'interviewer'; greeting: true }) {
+    return 'questionIndex' in m
+      ? selectedQuestions[m.questionIndex]?.[lang]
+      : t(`interviewers.${interviewerId}.greeting`, { name: voiceName })
+  }
+
   const lastInterviewerMessage = [...messages].reverse().find((m) => m.author === 'interviewer')
   const caption =
     streaming ||
-    (lastInterviewerMessage?.author === 'interviewer'
-      ? selectedQuestions[lastInterviewerMessage.questionIndex]?.[lang]
-      : '')
+    (lastInterviewerMessage?.author === 'interviewer' ? interviewerMessageText(lastInterviewerMessage) : '')
 
   return (
     <main
@@ -301,7 +332,7 @@ export default function MeetSessionPage() {
                   whiteSpace: 'pre-wrap',
                 }}
               >
-                {m.author === 'user' ? m.text : selectedQuestions[m.questionIndex]?.[lang]}
+                {m.author === 'user' ? m.text : interviewerMessageText(m)}
               </div>
             ))}
             {streaming && (

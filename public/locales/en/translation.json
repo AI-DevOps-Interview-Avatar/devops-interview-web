@@ -16,16 +16,20 @@
   },
   "interviewers": {
     "recruiter": {
-      "description": "Soft skills, motivation and basic technical knowledge"
+      "description": "Soft skills, motivation and basic technical knowledge",
+      "greeting": "Hi, I'm {{name}}, the Recruiter for this role. I'll ask about your motivation, soft skills, and some basic technical fundamentals."
     },
     "hr": {
-      "description": "Culture fit and team interaction"
+      "description": "Culture fit and team interaction",
+      "greeting": "Hello, I'm {{name}}, the HR Manager. Let's talk about culture fit and how you work with a team."
     },
     "senior-devops": {
-      "description": "CI/CD, Kubernetes, IaC, incidents and observability"
+      "description": "CI/CD, Kubernetes, IaC, incidents and observability",
+      "greeting": "Hey, I'm {{name}}, Senior DevOps Engineer. I'll dive into some deep technical questions on Kubernetes, CI/CD, Terraform, and AWS."
     },
     "cto": {
-      "description": "Architecture, scalability, engineering strategy, trade-offs"
+      "description": "Architecture, scalability, engineering strategy, trade-offs",
+      "greeting": "Hi, I'm {{name}}, CTO / Tech Lead. I'd like to discuss architecture, scalability, and security trade-offs with you."
     }
   },
   "meet": {

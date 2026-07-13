@@ -28,11 +28,15 @@ function pickVoice(lang: VoiceLang, gender: VoiceGender): SpeechSynthesisVoice |
 
   const langPrefix = LANG_TAGS[lang].split('-')[0]
   const sameLanguage = voices.filter((voice) => voice.lang.toLowerCase().startsWith(langPrefix))
-  const pool = sameLanguage.length > 0 ? sameLanguage : voices
+  // Browsers speak in the assigned voice's own language regardless of
+  // utterance.lang, so falling back to a cross-language voice here would
+  // silently keep speaking English after switching the UI to Ukrainian.
+  // No matching voice for this language → leave utterance.voice unset below
+  // and let the browser pick its own default for utterance.lang.
+  if (sameLanguage.length === 0) return null
 
   const hints = NAME_HINTS[gender]
-  const byName = pool.find((voice) => hints.some((hint) => voice.name.toLowerCase().includes(hint)))
-  return byName ?? null
+  return sameLanguage.find((voice) => hints.some((hint) => voice.name.toLowerCase().includes(hint))) ?? null
 }
 
 /** Speaks `text` aloud in `gender`'s voice, canceling any utterance already in progress. */

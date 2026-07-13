@@ -13,7 +13,7 @@ export function LanguageSwitcher() {
     <div
       role="group"
       aria-label={t('language.label')}
-      style={{ display: 'flex', gap: 4, position: 'absolute', top: 16, right: 16 }}
+      style={{ display: 'flex', gap: 4, position: 'absolute', top: 16, right: 16, zIndex: 10 }}
     >
       {SUPPORTED_LANGUAGES.map((lang) => (
         <button

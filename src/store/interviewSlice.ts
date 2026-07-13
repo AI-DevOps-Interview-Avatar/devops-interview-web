@@ -7,6 +7,8 @@ export type ChatMessage =
   | { author: 'user'; text: string }
   /** `questionIndex` into `selectedQuestions` (not raw text) so switching UI language re-translates past turns. */
   | { author: 'interviewer'; questionIndex: number }
+  /** The persona's opening self-introduction, looked up via i18n at render time so it also re-translates. */
+  | { author: 'interviewer'; greeting: true }
 
 interface InterviewState {
   interviewerId: string | null
@@ -38,9 +40,9 @@ const interviewSlice = createSlice({
     },
     addMessage(state, action: PayloadAction<ChatMessage>) {
       state.messages.push(action.payload)
-      if (action.payload.author === 'interviewer') {
+      if (action.payload.author === 'interviewer' && 'questionIndex' in action.payload) {
         state.questionCount += 1
-      } else if (state.questionCount >= MAX_QUESTIONS) {
+      } else if (action.payload.author === 'user' && state.questionCount >= MAX_QUESTIONS) {
         // Only finish once the candidate has answered the last question —
         // otherwise the input box would vanish right as Q5 is asked.
         state.finished = true
