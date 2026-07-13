@@ -8,6 +8,10 @@ import { addMessage, MAX_QUESTIONS, startInterview } from '../../store/interview
 import { appendHistory } from '../../store/historySlice'
 import { AvatarTile } from '../../shared/ui/AvatarTile'
 import { LanguageSwitcher } from '../../shared/ui/LanguageSwitcher'
+import { SelfCameraTile } from '../../shared/ui/SelfCameraTile'
+import { ChatIcon, CallEndIcon, MicIcon, VideocamIcon, VideocamOffIcon } from '../../shared/ui/icons'
+import { speak, stopSpeaking } from '../../shared/voice/tts'
+import { isSpeechRecognitionSupported, startListening, type ListeningHandle } from '../../shared/voice/stt'
 import type { RootState } from '../../store'
 
 export default function MeetSessionPage() {
@@ -19,14 +23,20 @@ export default function MeetSessionPage() {
   const [draft, setDraft] = useState('')
   const [streaming, setStreaming] = useState('')
   const [messagesOpen, setMessagesOpen] = useState(true)
+  const [cameraOn, setCameraOn] = useState(false)
+  const [listening, setListening] = useState(false)
   const backendRef = useRef(new MockLlmBackend())
+  const listeningHandleRef = useRef<ListeningHandle | null>(null)
 
   const interviewer = INTERVIEWERS.find((i) => i.id === interviewerId)
+  const lang = i18n.resolvedLanguage === 'ua' ? 'ua' : 'en'
+  const turns = t('meet.turns', { returnObjects: true }) as string[]
 
   useEffect(() => {
     if (!interviewerId) return
     dispatch(startInterview(interviewerId))
-    backendRef.current.init().then(() => askNextQuestion())
+    backendRef.current.init().then(() => askNextQuestion(0))
+    return () => stopSpeaking()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [interviewerId])
 
@@ -40,14 +50,15 @@ export default function MeetSessionPage() {
     }
   }, [finished, interviewerId, questionCount])
 
-  async function askNextQuestion() {
+  async function askNextQuestion(turnIndex: number) {
     setStreaming('')
-    const lang = i18n.resolvedLanguage === 'ua' ? 'ua' : 'en'
-    const full = await backendRef.current.generate('', lang, (token) =>
+    const text = turns[turnIndex % turns.length]
+    const full = await backendRef.current.generate(text, (token) =>
       setStreaming((prev) => prev + token),
     )
-    dispatch(addMessage({ author: 'interviewer', text: full }))
+    dispatch(addMessage({ author: 'interviewer', turnIndex }))
     setStreaming('')
+    speak(full, lang)
   }
 
   function handleSend() {
@@ -55,7 +66,27 @@ export default function MeetSessionPage() {
     dispatch(addMessage({ author: 'user', text: draft.trim() }))
     setDraft('')
     if (questionCount < MAX_QUESTIONS) {
-      askNextQuestion()
+      askNextQuestion(questionCount)
+    }
+  }
+
+  function toggleListening() {
+    if (listening) {
+      listeningHandleRef.current?.stop()
+      return
+    }
+    stopSpeaking()
+    const handle = startListening(
+      lang,
+      (transcript) => setDraft((prev) => (prev ? `${prev} ${transcript}` : transcript)),
+      () => {
+        setListening(false)
+        listeningHandleRef.current = null
+      },
+    )
+    if (handle) {
+      listeningHandleRef.current = handle
+      setListening(true)
     }
   }
 
@@ -63,7 +94,9 @@ export default function MeetSessionPage() {
     return <p>Interviewer not found.</p>
   }
 
-  const caption = streaming || messages.at(-1)?.text || ''
+  const lastInterviewerMessage = [...messages].reverse().find((m) => m.author === 'interviewer')
+  const caption =
+    streaming || (lastInterviewerMessage?.author === 'interviewer' ? turns[lastInterviewerMessage.turnIndex] : '')
 
   return (
     <main
@@ -79,34 +112,74 @@ export default function MeetSessionPage() {
       <section style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column' }}>
         <LanguageSwitcher />
 
-        <div style={{ flex: 1, display: 'grid', placeItems: 'center' }}>
-          <div style={{ textAlign: 'center' }}>
-            <AvatarTile interviewer={interviewer} isSpeaking={Boolean(streaming)} size={320} />
-            <p style={{ marginTop: '0.75rem', fontWeight: 600 }}>{interviewer.voiceName}</p>
+        <div style={{ flex: 1, display: 'grid', placeItems: 'center', padding: '1rem' }}>
+          <div
+            style={{
+              position: 'relative',
+              width: 'min(70vh, 560px)',
+              aspectRatio: '1 / 1',
+              background: '#111318',
+              border: '1px solid #2e303a',
+              borderRadius: 24,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.75rem',
+              overflow: 'hidden',
+            }}
+          >
+            <AvatarTile interviewer={interviewer} isSpeaking={Boolean(streaming)} size={220} />
+            <p style={{ fontWeight: 600 }}>{interviewer.voiceName}</p>
+
+            {caption && (
+              <p
+                style={{
+                  position: 'absolute',
+                  bottom: 16,
+                  left: 16,
+                  right: 16,
+                  background: 'rgba(0,0,0,0.55)',
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: 8,
+                  fontSize: 14,
+                }}
+              >
+                {caption}
+              </p>
+            )}
+
+            <SelfCameraTile active={cameraOn} />
           </div>
         </div>
 
-        {caption && (
-          <p
-            style={{
-              position: 'absolute',
-              bottom: 96,
-              left: 24,
-              right: messagesOpen ? 344 : 24,
-              background: 'rgba(0,0,0,0.55)',
-              padding: '0.5rem 1rem',
-              borderRadius: 8,
-            }}
-          >
-            {caption}
-          </p>
-        )}
-
         <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', padding: '1.5rem' }}>
-          <ControlButton label="mic" />
-          <ControlButton label="camera" />
-          <ControlButton label="chat" onClick={() => setMessagesOpen((v) => !v)} active={messagesOpen} />
-          <ControlButton label="hangup" tone="#f44336" onClick={() => navigate('/interview')} />
+          <ControlButton
+            label={listening ? t('meet.controls.micStop') : t('meet.controls.micStart')}
+            onClick={toggleListening}
+            active={listening}
+            disabled={!isSpeechRecognitionSupported()}
+            title={isSpeechRecognitionSupported() ? undefined : t('meet.controls.micUnsupported')}
+          >
+            <MicIcon />
+          </ControlButton>
+          <ControlButton
+            label={cameraOn ? t('meet.controls.cameraOn') : t('meet.controls.cameraOff')}
+            onClick={() => setCameraOn((v) => !v)}
+            active={cameraOn}
+          >
+            {cameraOn ? <VideocamIcon /> : <VideocamOffIcon />}
+          </ControlButton>
+          <ControlButton
+            label={t('meet.controls.chat')}
+            onClick={() => setMessagesOpen((v) => !v)}
+            active={messagesOpen}
+          >
+            <ChatIcon />
+          </ControlButton>
+          <ControlButton label={t('meet.controls.hangup')} tone="#f44336" onClick={() => navigate('/interview')}>
+            <CallEndIcon />
+          </ControlButton>
         </div>
 
         {finished && (
@@ -142,13 +215,16 @@ export default function MeetSessionPage() {
                   maxWidth: '85%',
                 }}
               >
-                {m.text}
+                {m.author === 'user' ? m.text : turns[m.turnIndex]}
               </div>
             ))}
             {streaming && (
               <div style={{ alignSelf: 'flex-start', background: '#2a2b33', borderRadius: 12, padding: '0.5rem 0.75rem' }}>
                 {streaming}
               </div>
+            )}
+            {listening && (
+              <div style={{ alignSelf: 'center', color: '#9ca3af', fontSize: 13 }}>{t('meet.controls.listening')}</div>
             )}
           </div>
           {!finished && (
@@ -173,28 +249,39 @@ function ControlButton({
   label,
   tone = '#3a3b45',
   active,
+  disabled,
+  title,
   onClick,
+  children,
 }: {
   label: string
   tone?: string
   active?: boolean
+  disabled?: boolean
+  title?: string
   onClick?: () => void
+  children: React.ReactNode
 }) {
   return (
     <button
       aria-label={label}
+      title={title ?? label}
       onClick={onClick}
+      disabled={disabled}
       style={{
         width: 48,
         height: 48,
         borderRadius: '50%',
         border: 'none',
+        display: 'grid',
+        placeItems: 'center',
         background: active ? '#c084fc' : tone,
-        color: '#fff',
-        cursor: 'pointer',
+        color: active ? '#1c1d23' : '#fff',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.4 : 1,
       }}
     >
-      {label[0].toUpperCase()}
+      {children}
     </button>
   )
 }

@@ -34,7 +34,24 @@
     "send": "Send",
     "you": "You",
     "finished": "The interview is over. Thank you for your answers!",
-    "viewHistory": "View history"
+    "viewHistory": "View history",
+    "turns": [
+      "Please describe how you would deploy this service to production from scratch.",
+      "What approach would you take to roll back a failed release?",
+      "How would you set up monitoring and alerting for this cluster?",
+      "Describe how you would set up a CI/CD pipeline for a multi-service system.",
+      "Thank you for your answers! That's all the questions for today."
+    ],
+    "controls": {
+      "micStart": "Record a voice answer",
+      "micStop": "Stop listening",
+      "micUnsupported": "Voice input is not supported in this browser",
+      "cameraOn": "Turn off camera",
+      "cameraOff": "Turn on camera",
+      "chat": "Toggle chat",
+      "hangup": "Leave call",
+      "listening": "Listening…"
+    }
   },
   "history": {
     "title": "Interview History",

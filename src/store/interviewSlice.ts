@@ -2,10 +2,10 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 
 export const MAX_QUESTIONS = 5
 
-export interface ChatMessage {
-  author: 'interviewer' | 'user'
-  text: string
-}
+export type ChatMessage =
+  | { author: 'user'; text: string }
+  /** `turnIndex` (not raw text) so switching UI language re-translates past turns. */
+  | { author: 'interviewer'; turnIndex: number }
 
 interface InterviewState {
   interviewerId: string | null
