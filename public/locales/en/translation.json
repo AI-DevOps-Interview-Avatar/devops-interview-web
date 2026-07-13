@@ -48,9 +48,11 @@
       "micUnsupported": "Voice input is not supported in this browser",
       "cameraOn": "Turn off camera",
       "cameraOff": "Turn on camera",
+      "captions": "Toggle captions",
       "chat": "Toggle chat",
       "hangup": "Leave call",
-      "listening": "Listening…"
+      "listening": "Listening…",
+      "notAvailable": "Not available in this mock interview"
     }
   },
   "history": {

@@ -64,3 +64,52 @@ export function CallEndIcon({ size = 22 }: IconProps) {
     </svg>
   )
 }
+
+export function CaptionsIcon({ size = 22 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...strokeProps}>
+      <rect x="2" y="5" width="20" height="14" rx="2" />
+      <path d="M7 12.5a2 2 0 1 1 0-3M13.5 12.5a2 2 0 1 1 0-3" strokeWidth={1.6} />
+    </svg>
+  )
+}
+
+export function PresentIcon({ size = 22 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...strokeProps}>
+      <rect x="3" y="4" width="18" height="13" rx="2" />
+      <path d="M8 21h8M12 17v4" />
+    </svg>
+  )
+}
+
+export function MoreVertIcon({ size = 22 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+      <circle cx="12" cy="5" r="1.8" />
+      <circle cx="12" cy="12" r="1.8" />
+      <circle cx="12" cy="19" r="1.8" />
+    </svg>
+  )
+}
+
+export function PeopleIcon({ size = 22 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...strokeProps}>
+      <circle cx="9" cy="8" r="3" />
+      <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" />
+      <path d="M16 9a2.5 2.5 0 1 0 0-5" />
+      <path d="M18.5 14.3c2 .6 3.5 2.7 3.5 5.7" />
+    </svg>
+  )
+}
+
+export function InfoIcon({ size = 22 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...strokeProps}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 11v6" />
+      <circle cx="12" cy="7.5" r="0.9" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}

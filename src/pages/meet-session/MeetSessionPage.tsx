@@ -9,7 +9,18 @@ import { appendHistory } from '../../store/historySlice'
 import { AvatarTile } from '../../shared/ui/AvatarTile'
 import { LanguageSwitcher } from '../../shared/ui/LanguageSwitcher'
 import { SelfCameraTile } from '../../shared/ui/SelfCameraTile'
-import { ChatIcon, CallEndIcon, MicIcon, VideocamIcon, VideocamOffIcon } from '../../shared/ui/icons'
+import {
+  CallEndIcon,
+  CaptionsIcon,
+  ChatIcon,
+  InfoIcon,
+  MicIcon,
+  MoreVertIcon,
+  PeopleIcon,
+  PresentIcon,
+  VideocamIcon,
+  VideocamOffIcon,
+} from '../../shared/ui/icons'
 import { speak, stopSpeaking } from '../../shared/voice/tts'
 import { isSpeechRecognitionSupported, startListening, type ListeningHandle } from '../../shared/voice/stt'
 import type { RootState } from '../../store'
@@ -24,6 +35,7 @@ export default function MeetSessionPage() {
   const [streaming, setStreaming] = useState('')
   const [messagesOpen, setMessagesOpen] = useState(true)
   const [cameraOn, setCameraOn] = useState(false)
+  const [captionsOn, setCaptionsOn] = useState(true)
   const [listening, setListening] = useState(false)
   const backendRef = useRef(new MockLlmBackend())
   const listeningHandleRef = useRef<ListeningHandle | null>(null)
@@ -58,7 +70,9 @@ export default function MeetSessionPage() {
     )
     dispatch(addMessage({ author: 'interviewer', turnIndex }))
     setStreaming('')
-    speak(full, lang)
+    if (interviewer) {
+      speak(full, lang, interviewer.voiceGender)
+    }
   }
 
   function handleSend() {
@@ -104,86 +118,117 @@ export default function MeetSessionPage() {
         position: 'relative',
         display: 'flex',
         height: '100vh',
-        background: '#1c1d23',
+        background: '#0e0e11',
         color: '#f3f4f6',
         overflow: 'hidden',
       }}
     >
-      <section style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <section style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <LanguageSwitcher />
 
-        <div style={{ flex: 1, display: 'grid', placeItems: 'center', padding: '1rem' }}>
-          <div
-            style={{
-              position: 'relative',
-              width: 'min(70vh, 560px)',
-              aspectRatio: '1 / 1',
-              background: '#111318',
-              border: '1px solid #2e303a',
-              borderRadius: 24,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.75rem',
-              overflow: 'hidden',
-            }}
-          >
-            <AvatarTile interviewer={interviewer} isSpeaking={Boolean(streaming)} size={220} />
-            <p style={{ fontWeight: 600 }}>{interviewer.voiceName}</p>
-
-            {caption && (
-              <p
-                style={{
-                  position: 'absolute',
-                  bottom: 16,
-                  left: 16,
-                  right: 16,
-                  background: 'rgba(0,0,0,0.55)',
-                  padding: '0.5rem 0.75rem',
-                  borderRadius: 8,
-                  fontSize: 14,
-                }}
-              >
-                {caption}
-              </p>
-            )}
-
-            <SelfCameraTile active={cameraOn} />
+        {/* Full-bleed video tile, Meet-style — no card border/padding around it. */}
+        <div
+          style={{
+            position: 'relative',
+            flex: 1,
+            display: 'grid',
+            placeItems: 'center',
+            background: 'radial-gradient(ellipse at center, #2a2b33 0%, #16171a 75%)',
+            overflow: 'hidden',
+          }}
+        >
+          <div style={{ textAlign: 'center' }}>
+            <AvatarTile interviewer={interviewer} isSpeaking={Boolean(streaming)} size={280} />
+            <p style={{ marginTop: '0.75rem', fontWeight: 600 }}>{interviewer.voiceName}</p>
           </div>
+
+          {captionsOn && caption && (
+            <p
+              style={{
+                position: 'absolute',
+                bottom: 24,
+                left: 24,
+                right: 24,
+                textAlign: 'center',
+                background: 'rgba(0,0,0,0.6)',
+                padding: '0.6rem 1rem',
+                borderRadius: 8,
+                fontSize: 15,
+              }}
+            >
+              {caption}
+            </p>
+          )}
+
+          <SelfCameraTile active={cameraOn} />
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', padding: '1.5rem' }}>
-          <ControlButton
-            label={listening ? t('meet.controls.micStop') : t('meet.controls.micStart')}
-            onClick={toggleListening}
-            active={listening}
-            disabled={!isSpeechRecognitionSupported()}
-            title={isSpeechRecognitionSupported() ? undefined : t('meet.controls.micUnsupported')}
-          >
-            <MicIcon />
-          </ControlButton>
-          <ControlButton
-            label={cameraOn ? t('meet.controls.cameraOn') : t('meet.controls.cameraOff')}
-            onClick={() => setCameraOn((v) => !v)}
-            active={cameraOn}
-          >
-            {cameraOn ? <VideocamIcon /> : <VideocamOffIcon />}
-          </ControlButton>
-          <ControlButton
-            label={t('meet.controls.chat')}
-            onClick={() => setMessagesOpen((v) => !v)}
-            active={messagesOpen}
-          >
-            <ChatIcon />
-          </ControlButton>
-          <ControlButton label={t('meet.controls.hangup')} tone="#f44336" onClick={() => navigate('/interview')}>
+        {/* Meet toolbar: grouped pills — mic/camera/captions/present/more, hangup, info/people/chat. */}
+        <footer
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '1.5rem',
+            padding: '0.75rem 1rem',
+            background: '#202124',
+          }}
+        >
+          <div style={{ display: 'flex', gap: '0.5rem', background: '#2a2b2f', borderRadius: 999, padding: 6 }}>
+            <ControlButton
+              label={listening ? t('meet.controls.micStop') : t('meet.controls.micStart')}
+              onClick={toggleListening}
+              active={listening}
+              disabled={!isSpeechRecognitionSupported()}
+              title={isSpeechRecognitionSupported() ? undefined : t('meet.controls.micUnsupported')}
+            >
+              <MicIcon />
+            </ControlButton>
+            <ControlButton
+              label={cameraOn ? t('meet.controls.cameraOn') : t('meet.controls.cameraOff')}
+              onClick={() => setCameraOn((v) => !v)}
+              active={cameraOn}
+            >
+              {cameraOn ? <VideocamIcon /> : <VideocamOffIcon />}
+            </ControlButton>
+            <ControlButton
+              label={t('meet.controls.captions')}
+              onClick={() => setCaptionsOn((v) => !v)}
+              active={captionsOn}
+            >
+              <CaptionsIcon />
+            </ControlButton>
+            <ControlButton label={t('meet.controls.notAvailable')} disabled>
+              <PresentIcon />
+            </ControlButton>
+            <ControlButton label={t('meet.controls.notAvailable')} disabled>
+              <MoreVertIcon />
+            </ControlButton>
+          </div>
+
+          <ControlButton label={t('meet.controls.hangup')} tone="#f44336" wide onClick={() => navigate('/interview')}>
             <CallEndIcon />
           </ControlButton>
-        </div>
+
+          <div style={{ display: 'flex', gap: '0.5rem', background: '#2a2b2f', borderRadius: 999, padding: 6 }}>
+            <ControlButton label={t('meet.controls.notAvailable')} disabled>
+              <InfoIcon />
+            </ControlButton>
+            <ControlButton label={t('meet.controls.notAvailable')} disabled>
+              <PeopleIcon />
+            </ControlButton>
+            <ControlButton
+              label={t('meet.controls.chat')}
+              onClick={() => setMessagesOpen((v) => !v)}
+              active={messagesOpen}
+            >
+              <ChatIcon />
+            </ControlButton>
+          </div>
+        </footer>
 
         {finished && (
-          <div style={{ textAlign: 'center', paddingBottom: '1.5rem' }}>
+          <div style={{ textAlign: 'center', padding: '0 0 1rem' }}>
             <p>{t('meet.finished')}</p>
             <button onClick={() => navigate('/history')}>{t('meet.viewHistory')}</button>
           </div>
@@ -247,9 +292,10 @@ export default function MeetSessionPage() {
 
 function ControlButton({
   label,
-  tone = '#3a3b45',
+  tone = '#3c4043',
   active,
   disabled,
+  wide,
   title,
   onClick,
   children,
@@ -258,6 +304,7 @@ function ControlButton({
   tone?: string
   active?: boolean
   disabled?: boolean
+  wide?: boolean
   title?: string
   onClick?: () => void
   children: React.ReactNode
@@ -269,16 +316,16 @@ function ControlButton({
       onClick={onClick}
       disabled={disabled}
       style={{
-        width: 48,
-        height: 48,
-        borderRadius: '50%',
+        width: wide ? 72 : 44,
+        height: 44,
+        borderRadius: wide ? 22 : '50%',
         border: 'none',
         display: 'grid',
         placeItems: 'center',
         background: active ? '#c084fc' : tone,
         color: active ? '#1c1d23' : '#fff',
         cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.4 : 1,
+        opacity: disabled ? 0.35 : 1,
       }}
     >
       {children}
