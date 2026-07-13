@@ -1,0 +1,48 @@
+{
+  "splash": {
+    "title": "DevOps Interview AI",
+    "loading": "Loading model… {{progress}}%"
+  },
+  "selection": {
+    "title": "Choose Your Interviewer",
+    "subtitle": "Select a role to start your mock DevOps interview",
+    "historyLink": "History"
+  },
+  "difficulty": {
+    "Easy": "Easy",
+    "Medium": "Medium",
+    "Hard": "Hard",
+    "Expert": "Expert"
+  },
+  "interviewers": {
+    "recruiter": {
+      "description": "CV review, company culture, salary expectations"
+    },
+    "hr": {
+      "description": "Behavioral questions, team dynamics, soft skills"
+    },
+    "senior-devops": {
+      "description": "CI/CD, Kubernetes, IaC, incidents and observability"
+    },
+    "cto": {
+      "description": "Architecture, scalability, engineering strategy, trade-offs"
+    }
+  },
+  "meet": {
+    "messagesTitle": "In-call messages",
+    "sendPlaceholder": "Send a message",
+    "send": "Send",
+    "you": "You",
+    "finished": "The interview is over. Thank you for your answers!",
+    "viewHistory": "View history"
+  },
+  "history": {
+    "title": "Interview History",
+    "empty": "No completed sessions yet.",
+    "newInterview": "← New interview",
+    "questions": "{{count}} questions"
+  },
+  "language": {
+    "label": "Language"
+  }
+}

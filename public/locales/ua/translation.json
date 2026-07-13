@@ -1,0 +1,48 @@
+{
+  "splash": {
+    "title": "DevOps Interview AI",
+    "loading": "Завантаження моделі… {{progress}}%"
+  },
+  "selection": {
+    "title": "Оберіть інтерв'юера",
+    "subtitle": "Виберіть роль, щоб почати мокове DevOps-інтерв'ю",
+    "historyLink": "Історія"
+  },
+  "difficulty": {
+    "Easy": "Легко",
+    "Medium": "Середньо",
+    "Hard": "Складно",
+    "Expert": "Експертно"
+  },
+  "interviewers": {
+    "recruiter": {
+      "description": "CV, культура компанії, salary-очікування"
+    },
+    "hr": {
+      "description": "Поведінкові запитання, командна робота, soft skills"
+    },
+    "senior-devops": {
+      "description": "CI/CD, Kubernetes, IaC, інциденти та спостережуваність"
+    },
+    "cto": {
+      "description": "Архітектура, масштабування, інженерна стратегія, компроміси"
+    }
+  },
+  "meet": {
+    "messagesTitle": "Повідомлення дзвінка",
+    "sendPlaceholder": "Введіть повідомлення",
+    "send": "Надіслати",
+    "you": "Ви",
+    "finished": "Інтерв'ю завершено. Дякуємо за відповіді!",
+    "viewHistory": "Переглянути історію"
+  },
+  "history": {
+    "title": "Історія інтерв'ю",
+    "empty": "Ще немає завершених сесій.",
+    "newInterview": "← Нове інтерв'ю",
+    "questions": "{{count}} питань"
+  },
+  "language": {
+    "label": "Мова"
+  }
+}

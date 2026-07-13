@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { LanguageSwitcher } from '../../shared/ui/LanguageSwitcher'
 
 /**
  * Заглушка bootstrap-екрану моделі. Реальне завантаження .task бандла
@@ -8,6 +10,7 @@ import { useNavigate } from 'react-router-dom'
 export default function SplashPage() {
   const [progress, setProgress] = useState(0)
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -24,10 +27,20 @@ export default function SplashPage() {
   }, [navigate])
 
   return (
-    <main style={{ display: 'grid', placeItems: 'center', height: '100vh' }}>
+    <main
+      style={{
+        position: 'relative',
+        display: 'grid',
+        placeItems: 'center',
+        height: '100vh',
+        background: '#16171d',
+        color: '#f3f4f6',
+      }}
+    >
+      <LanguageSwitcher />
       <div style={{ textAlign: 'center' }}>
-        <h1>DevOps Interview AI</h1>
-        <p>Завантаження моделі… {progress}%</p>
+        <h1>{t('splash.title')}</h1>
+        <p>{t('splash.loading', { progress })}</p>
         <progress value={progress} max={100} />
       </div>
     </main>
