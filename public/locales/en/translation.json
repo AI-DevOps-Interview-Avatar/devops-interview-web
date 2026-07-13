@@ -35,13 +35,13 @@
     "you": "You",
     "finished": "The interview is over. Thank you for your answers!",
     "viewHistory": "View history",
-    "turns": [
-      "Please describe how you would deploy this service to production from scratch.",
-      "What approach would you take to roll back a failed release?",
-      "How would you set up monitoring and alerting for this cluster?",
-      "Describe how you would set up a CI/CD pipeline for a multi-service system.",
-      "Thank you for your answers! That's all the questions for today."
-    ],
+    "assessment": {
+      "title": "{{role}} — session summary",
+      "disclaimer": "Mock rubric, not a real skill grade — full LLM-based answer grading arrives with on-device inference (DIA-84).",
+      "completion": "Completion",
+      "avgAnswerWords": "Avg. answer length (words)",
+      "categories": "Categories covered"
+    },
     "controls": {
       "micStart": "Record a voice answer",
       "micStop": "Stop listening",
@@ -59,7 +59,14 @@
     "title": "Interview History",
     "empty": "No completed sessions yet.",
     "newInterview": "← New interview",
-    "questions": "{{count}} questions"
+    "completion": "{{rate}}% completed",
+    "avgWords": "{{count}} words/answer avg.",
+    "average": "Your average completion with {{role}}: {{rate}}%"
+  },
+  "level": {
+    "junior": "Junior",
+    "middle": "Middle",
+    "senior": "Senior"
   },
   "language": {
     "label": "Language"

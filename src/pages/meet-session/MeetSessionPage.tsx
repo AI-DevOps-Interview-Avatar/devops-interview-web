@@ -1,11 +1,14 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { useTranslation } from 'react-i18next'
 import { MockLlmBackend } from '../../api/llmClient'
 import { INTERVIEWERS } from '../../domain/models/InterviewerProfile'
+import { QUESTION_BANKS } from '../../domain/models/questionBank'
+import { assessSession } from '../../domain/assessment'
 import { addMessage, MAX_QUESTIONS, startInterview } from '../../store/interviewSlice'
 import { appendHistory } from '../../store/historySlice'
+import { shuffle } from '../../shared/lib/shuffle'
 import { AvatarTile } from '../../shared/ui/AvatarTile'
 import { LanguageSwitcher } from '../../shared/ui/LanguageSwitcher'
 import { SelfCameraTile } from '../../shared/ui/SelfCameraTile'
@@ -30,7 +33,7 @@ export default function MeetSessionPage() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const { t, i18n } = useTranslation()
-  const { messages, questionCount, finished } = useSelector((state: RootState) => state.interview)
+  const { messages, selectedQuestions, questionCount, finished } = useSelector((state: RootState) => state.interview)
   const [draft, setDraft] = useState('')
   const [streaming, setStreaming] = useState('')
   const [messagesOpen, setMessagesOpen] = useState(true)
@@ -39,36 +42,57 @@ export default function MeetSessionPage() {
   const [listening, setListening] = useState(false)
   const backendRef = useRef(new MockLlmBackend())
   const listeningHandleRef = useRef<ListeningHandle | null>(null)
+  const historySavedRef = useRef(false)
 
   const interviewer = INTERVIEWERS.find((i) => i.id === interviewerId)
   const lang = i18n.resolvedLanguage === 'ua' ? 'ua' : 'en'
-  const turns = t('meet.turns', { returnObjects: true }) as string[]
 
   useEffect(() => {
     if (!interviewerId) return
-    dispatch(startInterview(interviewerId))
-    backendRef.current.init().then(() => askNextQuestion(0))
-    return () => stopSpeaking()
+    // Guards against React StrictMode's dev-only double-invoke of this effect
+    // (mount → cleanup → mount), which would otherwise fire two overlapping
+    // askNextQuestion(0, ...) calls and duplicate the first question.
+    let cancelled = false
+    const bank = QUESTION_BANKS[interviewerId] ?? []
+    const questions = shuffle(bank).slice(0, MAX_QUESTIONS)
+    historySavedRef.current = false
+    dispatch(startInterview({ interviewerId, questions }))
+    backendRef.current.init().then(() => {
+      if (!cancelled) askNextQuestion(0, questions)
+    })
+    return () => {
+      cancelled = true
+      stopSpeaking()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [interviewerId])
 
   useEffect(() => {
     if (finished) {
-      appendHistory({
-        interviewerId: interviewerId ?? 'unknown',
-        finishedAt: new Date().toISOString(),
-        questionCount,
-      })
+      saveToHistory()
     }
-  }, [finished, interviewerId, questionCount])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [finished])
 
-  async function askNextQuestion(turnIndex: number) {
+  function saveToHistory() {
+    if (historySavedRef.current || !interviewerId || selectedQuestions.length === 0) return
+    historySavedRef.current = true
+    const assessment = assessSession(messages, selectedQuestions)
+    appendHistory({
+      interviewerId,
+      level: selectedQuestions[0].level,
+      finishedAt: new Date().toISOString(),
+      ...assessment,
+    })
+  }
+
+  async function askNextQuestion(questionIndex: number, questions = selectedQuestions) {
+    const question = questions[questionIndex]
+    if (!question) return
     setStreaming('')
-    const text = turns[turnIndex % turns.length]
-    const full = await backendRef.current.generate(text, (token) =>
-      setStreaming((prev) => prev + token),
-    )
-    dispatch(addMessage({ author: 'interviewer', turnIndex }))
+    const text = question[lang]
+    const full = await backendRef.current.generate(text, (token) => setStreaming((prev) => prev + token))
+    dispatch(addMessage({ author: 'interviewer', questionIndex }))
     setStreaming('')
     if (interviewer) {
       speak(full, lang, interviewer.voiceGender)
@@ -82,6 +106,11 @@ export default function MeetSessionPage() {
     if (questionCount < MAX_QUESTIONS) {
       askNextQuestion(questionCount)
     }
+  }
+
+  function handleHangup() {
+    saveToHistory()
+    navigate('/interview')
   }
 
   function toggleListening() {
@@ -104,13 +133,21 @@ export default function MeetSessionPage() {
     }
   }
 
+  const assessment = useMemo(
+    () => (finished ? assessSession(messages, selectedQuestions) : null),
+    [finished, messages, selectedQuestions],
+  )
+
   if (!interviewer) {
     return <p>Interviewer not found.</p>
   }
 
   const lastInterviewerMessage = [...messages].reverse().find((m) => m.author === 'interviewer')
   const caption =
-    streaming || (lastInterviewerMessage?.author === 'interviewer' ? turns[lastInterviewerMessage.turnIndex] : '')
+    streaming ||
+    (lastInterviewerMessage?.author === 'interviewer'
+      ? selectedQuestions[lastInterviewerMessage.questionIndex]?.[lang]
+      : '')
 
   return (
     <main
@@ -137,12 +174,20 @@ export default function MeetSessionPage() {
             overflow: 'hidden',
           }}
         >
-          <div style={{ textAlign: 'center' }}>
-            <AvatarTile interviewer={interviewer} isSpeaking={Boolean(streaming)} size={280} />
-            <p style={{ marginTop: '0.75rem', fontWeight: 600 }}>{interviewer.voiceName}</p>
-          </div>
+          {finished && assessment ? (
+            <AssessmentCard
+              assessment={assessment}
+              interviewerRole={interviewer.role}
+              onViewHistory={() => navigate('/history')}
+            />
+          ) : (
+            <div style={{ textAlign: 'center' }}>
+              <AvatarTile interviewer={interviewer} isSpeaking={Boolean(streaming)} size={280} />
+              <p style={{ marginTop: '0.75rem', fontWeight: 600 }}>{interviewer.voiceName}</p>
+            </div>
+          )}
 
-          {captionsOn && caption && (
+          {!finished && captionsOn && caption && (
             <p
               style={{
                 position: 'absolute',
@@ -160,7 +205,7 @@ export default function MeetSessionPage() {
             </p>
           )}
 
-          <SelfCameraTile active={cameraOn} />
+          {!finished && <SelfCameraTile active={cameraOn} />}
         </div>
 
         {/* Meet toolbar: grouped pills — mic/camera/captions/present/more, hangup, info/people/chat. */}
@@ -179,7 +224,7 @@ export default function MeetSessionPage() {
               label={listening ? t('meet.controls.micStop') : t('meet.controls.micStart')}
               onClick={toggleListening}
               active={listening}
-              disabled={!isSpeechRecognitionSupported()}
+              disabled={!isSpeechRecognitionSupported() || finished}
               title={isSpeechRecognitionSupported() ? undefined : t('meet.controls.micUnsupported')}
             >
               <MicIcon />
@@ -188,6 +233,7 @@ export default function MeetSessionPage() {
               label={cameraOn ? t('meet.controls.cameraOn') : t('meet.controls.cameraOff')}
               onClick={() => setCameraOn((v) => !v)}
               active={cameraOn}
+              disabled={finished}
             >
               {cameraOn ? <VideocamIcon /> : <VideocamOffIcon />}
             </ControlButton>
@@ -195,6 +241,7 @@ export default function MeetSessionPage() {
               label={t('meet.controls.captions')}
               onClick={() => setCaptionsOn((v) => !v)}
               active={captionsOn}
+              disabled={finished}
             >
               <CaptionsIcon />
             </ControlButton>
@@ -206,7 +253,7 @@ export default function MeetSessionPage() {
             </ControlButton>
           </div>
 
-          <ControlButton label={t('meet.controls.hangup')} tone="#f44336" wide onClick={() => navigate('/interview')}>
+          <ControlButton label={t('meet.controls.hangup')} tone="#f44336" wide onClick={handleHangup}>
             <CallEndIcon />
           </ControlButton>
 
@@ -226,13 +273,6 @@ export default function MeetSessionPage() {
             </ControlButton>
           </div>
         </footer>
-
-        {finished && (
-          <div style={{ textAlign: 'center', padding: '0 0 1rem' }}>
-            <p>{t('meet.finished')}</p>
-            <button onClick={() => navigate('/history')}>{t('meet.viewHistory')}</button>
-          </div>
-        )}
       </section>
 
       {messagesOpen && (
@@ -258,9 +298,10 @@ export default function MeetSessionPage() {
                   borderRadius: 12,
                   padding: '0.5rem 0.75rem',
                   maxWidth: '85%',
+                  whiteSpace: 'pre-wrap',
                 }}
               >
-                {m.author === 'user' ? m.text : turns[m.turnIndex]}
+                {m.author === 'user' ? m.text : selectedQuestions[m.questionIndex]?.[lang]}
               </div>
             ))}
             {streaming && (
@@ -287,6 +328,46 @@ export default function MeetSessionPage() {
         </aside>
       )}
     </main>
+  )
+}
+
+function AssessmentCard({
+  assessment,
+  interviewerRole,
+  onViewHistory,
+}: {
+  assessment: ReturnType<typeof assessSession>
+  interviewerRole: string
+  onViewHistory: () => void
+}) {
+  const { t } = useTranslation()
+  return (
+    <div
+      style={{
+        background: '#1c1d23',
+        border: '1px solid #2e303a',
+        borderRadius: 16,
+        padding: '1.5rem',
+        width: 'min(90%, 420px)',
+        textAlign: 'left',
+      }}
+    >
+      <h2 style={{ marginTop: 0 }}>{t('meet.assessment.title', { role: interviewerRole })}</h2>
+      <p style={{ color: '#9ca3af', fontSize: 13 }}>{t('meet.assessment.disclaimer')}</p>
+
+      <dl style={{ display: 'grid', gridTemplateColumns: '1fr auto', rowGap: 8, margin: '1rem 0' }}>
+        <dt>{t('meet.assessment.completion')}</dt>
+        <dd style={{ margin: 0, fontWeight: 600, textAlign: 'right' }}>{assessment.completionRate}%</dd>
+        <dt>{t('meet.assessment.avgAnswerWords')}</dt>
+        <dd style={{ margin: 0, fontWeight: 600, textAlign: 'right' }}>{assessment.avgAnswerWords}</dd>
+        <dt>{t('meet.assessment.categories')}</dt>
+        <dd style={{ margin: 0, fontWeight: 600, textAlign: 'right' }}>{assessment.categories.join(', ') || '—'}</dd>
+      </dl>
+
+      <button onClick={onViewHistory} style={{ width: '100%' }}>
+        {t('meet.viewHistory')}
+      </button>
+    </div>
   )
 }
 
