@@ -6,7 +6,8 @@
   "selection": {
     "title": "Choose Your Interviewer",
     "subtitle": "Select a role to start your mock DevOps interview",
-    "historyLink": "History"
+    "historyLink": "History",
+    "pipelineLink": "Full hiring pipeline (5 stages) →"
   },
   "difficulty": {
     "Easy": "Easy",
@@ -20,8 +21,8 @@
       "greeting": "Hi, I'm {{name}}, the Recruiter for this role. I'll ask about your motivation, soft skills, and some basic technical fundamentals."
     },
     "hr": {
-      "description": "Culture fit and team interaction",
-      "greeting": "Hello, I'm {{name}}, the HR Manager. Let's talk about culture fit and how you work with a team."
+      "description": "Team chemistry, conflict resolution, working under pressure",
+      "greeting": "Hello, I'm {{name}}, the Project Manager. Let's talk about team chemistry and how you handle conflict and pressure."
     },
     "senior-devops": {
       "description": "CI/CD, Kubernetes, IaC, incidents and observability",
@@ -74,5 +75,38 @@
   },
   "language": {
     "label": "Language"
+  },
+  "pipeline": {
+    "home": {
+      "title": "Hiring Pipeline",
+      "subtitle": "Five sequential stages, in order — each unlocks after the previous one is completed."
+    },
+    "stageLabel": "Stage {{number}}",
+    "stages": {
+      "screening": "Primary Screening",
+      "technicalScreening": "Technical Screening",
+      "liveCoding": "Technical Interview & Live Coding",
+      "culturalFit": "Management & Team Interview",
+      "offer": "Final Offer"
+    },
+    "status": {
+      "completed": "Completed",
+      "unlocked": "Start",
+      "locked": "Locked"
+    },
+    "continueTo": "Continue to {{title}} →",
+    "viewOffer": "View your offer →",
+    "showReference": "Show reference solutions",
+    "hideReference": "Hide reference solutions"
+  },
+  "offer": {
+    "title": "Final Offer",
+    "subtitle": "Auto-generated from your Stage 1 screening answers.",
+    "nameLabel": "Your name",
+    "namePlaceholder": "Jane Doe",
+    "copy": "Copy letter",
+    "copied": "Copied!",
+    "backToPipeline": "← Back to pipeline",
+    "letterBody": "Dear {{candidateName}},\n\nCongratulations! We are pleased to offer you the {{position}} position, based on your compensation range of {{salaryExpectations}} and a start date aligned with a notice period of {{noticePeriod}}. We understand you are based in {{location}}.\n\nThis is a mock offer letter generated from your Stage 1 screening answers — no automated skill grading is involved (see DIA-84).\n\nWelcome aboard!"
   }
 }

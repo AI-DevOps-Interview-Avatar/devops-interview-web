@@ -1,4 +1,8 @@
+import { STAGE3_TASKS } from './stage3Tasks'
+
 export type QuestionLevel = 'junior' | 'middle' | 'senior'
+
+export type CandidateProfileField = 'salaryExpectations' | 'noticePeriod' | 'location' | 'techStackOverview'
 
 export interface BankQuestion {
   id: string
@@ -6,6 +10,13 @@ export interface BankQuestion {
   level: QuestionLevel
   ua: string
   en: string
+  /**
+   * Coding/manifest content that should render in a monospace block instead
+   * of prose (Stage 3 live-coding/YAML/troubleshooting tasks).
+   */
+  isTaskPrompt?: boolean
+  /** If set, the pipeline (Stage 5 offer letter) captures the next candidate answer under this field. */
+  profileField?: CandidateProfileField
 }
 
 // Recruiter (Easy) — Junior: General + Linux fundamentals.
@@ -1780,4 +1791,159 @@ export const QUESTION_BANKS: Record<string, BankQuestion[]> = {
   hr: HR_QUESTIONS,
   'senior-devops': SENIOR_DEVOPS_QUESTIONS,
   cto: CTO_QUESTIONS,
+}
+
+// ---------------------------------------------------------------------------
+// 5-stage hiring pipeline — fixed, non-randomized question scripts.
+// Unlike QUESTION_BANKS (shuffled practice pool), each pipeline stage asks
+// an exact, ordered set matching the real recruitment process definition.
+// ---------------------------------------------------------------------------
+
+// Stage 1 — Emma (Recruiter): non-technical screening only.
+export const RECRUITER_STAGE1_QUESTIONS: BankQuestion[] = [
+  {
+    id: 'stage1-tech-stack',
+    category: 'screening',
+    level: 'junior',
+    ua: 'Розкажіть коротко про технологічний стек, з яким ви працювали (без глибоких технічних деталей).',
+    en: 'Briefly walk me through the tech stack you have worked with (no deep technical detail needed).',
+    profileField: 'techStackOverview',
+  },
+  {
+    id: 'stage1-english-check',
+    category: 'english',
+    level: 'junior',
+    ua: 'Please describe the most challenging technical task you completed in your previous role and how you communicated with the team during it. (2 minutes, English only)',
+    en: 'Please describe the most challenging technical task you completed in your previous role and how you communicated with the team during it. (2 minutes, English only)',
+  },
+  {
+    id: 'stage1-fop-readiness',
+    category: 'admin',
+    level: 'junior',
+    ua: 'Чи готові ви оформити ФОП (приватне підприємництво) для співпраці, якщо це буде потрібно?',
+    en: 'Are you ready to register as a private entrepreneur (FOP), if the engagement requires it?',
+  },
+  {
+    id: 'stage1-military-status',
+    category: 'admin',
+    level: 'junior',
+    ua: 'Уточніть, будь ласка, ваш статус військового обліку.',
+    en: 'Could you confirm your military registration status?',
+  },
+  {
+    id: 'stage1-motivation',
+    category: 'motivation',
+    level: 'junior',
+    ua: 'Чому ви вирішили змінити поточне місце роботи і що саме вас приваблює в нашій вакансії?',
+    en: 'Why did you decide to change your current job, and what specifically attracts you to this position?',
+  },
+  {
+    id: 'stage1-communication',
+    category: 'behavioral',
+    level: 'junior',
+    ua: 'Опишіть ситуацію з вашого досвіду, коли пріоритети тасок різко змінилися в середині спринту. Як ви діяли?',
+    en: 'Describe a situation from your experience when task priorities suddenly changed mid-sprint. How did you handle it?',
+  },
+  {
+    id: 'stage1-conditions',
+    category: 'conditions',
+    level: 'junior',
+    ua: 'Які ваші зарплатні очікування (грошова вилка) та коли ви готові приступити до роботи (notice period)?',
+    en: 'What are your salary expectations (range) and when are you available to start (notice period)?',
+    profileField: 'salaryExpectations',
+  },
+  {
+    id: 'stage1-location',
+    category: 'conditions',
+    level: 'junior',
+    ua: 'Де ви наразі проживаєте (місто, країна)?',
+    en: 'Where are you currently located (city, country)?',
+    profileField: 'location',
+  },
+]
+
+// Stage 2 — Marcus (Senior DevOps): rapid theoretical blitz.
+export const MARCUS_STAGE2_BLITZ_QUESTIONS: BankQuestion[] = [
+  {
+    id: 'stage2-inodes',
+    category: 'linux',
+    level: 'middle',
+    ua: 'Що таке Inodes у файловій системі Linux? Що відбудеться, якщо вільне місце на диску є, але індекси inodes закінчилися?',
+    en: 'What are inodes in a Linux filesystem? What happens if disk space is available but inodes run out?',
+  },
+  {
+    id: 'stage2-tcp-udp',
+    category: 'networks',
+    level: 'middle',
+    ua: 'Опишіть різницю між TCP та UDP. Який протокол ви б обрали для трансляції відео, а який — для передачі фінансових транзакцій?',
+    en: 'Describe the difference between TCP and UDP. Which protocol would you choose for video streaming, and which for financial transactions?',
+  },
+  {
+    id: 'stage2-git',
+    category: 'development',
+    level: 'middle',
+    ua: 'У чому різниця між командами git merge та git rebase? Коли краще використовувати кожну з них?',
+    en: 'What is the difference between git merge and git rebase? When is each one preferable?',
+  },
+  {
+    id: 'stage2-docker',
+    category: 'virtualization',
+    level: 'middle',
+    ua: 'Чим відрізняється образ (Image) від контейнера (Container)? Що таке multi-stage build у Dockerfile і для чого його використовують?',
+    en: 'How does a Docker image differ from a container? What is a multi-stage build in a Dockerfile and why is it used?',
+  },
+  {
+    id: 'stage2-cicd',
+    category: 'ci-cd',
+    level: 'middle',
+    ua: 'Поясніть своїми словами різницю між Continuous Delivery та Continuous Deployment.',
+    en: 'Explain in your own words the difference between Continuous Delivery and Continuous Deployment.',
+  },
+  {
+    id: 'stage2-vpc',
+    category: 'clouds',
+    level: 'middle',
+    ua: 'Що таке VPC (Virtual Private Cloud)? Яка різниця між Public та Private підмережами (Subnets)?',
+    en: 'What is a VPC (Virtual Private Cloud)? What is the difference between public and private subnets?',
+  },
+]
+
+// Stage 4 — Olivia (Project Manager): cultural fit / team chemistry.
+export const OLIVIA_STAGE4_QUESTIONS: BankQuestion[] = [
+  {
+    id: 'stage4-conflict',
+    category: 'behavioral',
+    level: 'middle',
+    ua: 'Опишіть випадок, коли ви були категорично не згодні з технічним рішенням архітектора чи розробника. Як ви аргументували свою думку та якого компромісу дійшли?',
+    en: "Describe a time you strongly disagreed with an architect's or developer's technical decision. How did you argue your position, and what compromise did you reach?",
+  },
+  {
+    id: 'stage4-pressure',
+    category: 'behavioral',
+    level: 'middle',
+    ua: 'Розкажіть про ваш найважчий інцидент на продакшені (Post-mortem). Що саме зламалося, як швидко вдалося підняти систему і які висновки (Action Items) було зроблено?',
+    en: 'Tell me about your toughest production incident (post-mortem). What broke, how quickly did you recover, and what action items came out of it?',
+  },
+  {
+    id: 'stage4-prioritization',
+    category: 'behavioral',
+    level: 'middle',
+    ua: 'Тобі одночасно прилітає задача від розробників ("терміново розгорнути тестове оточення для фічі") і від безпеки ("знайдено критичну вразливість CVE у контейнерах на прод"). Твої дії?',
+    en: 'You simultaneously get a request from developers ("urgently spin up a test environment for a feature") and from security ("a critical CVE was found in production containers"). What do you do?',
+  },
+  {
+    id: 'stage4-growth',
+    category: 'behavioral',
+    level: 'middle',
+    ua: 'Як ви підтримуєте свої технічні знання в актуальному стані? Які останні технології чи інструменти ви вивчали самостійно за останні пів року?',
+    en: 'How do you keep your technical knowledge up to date? What technologies or tools have you self-taught in the last six months?',
+  },
+]
+
+/** Fixed, ordered question scripts per pipeline stage index (0-based, Stage 5 "offer" has none). */
+export const PIPELINE_QUESTION_SETS: Record<string, BankQuestion[]> = {
+  recruiter: RECRUITER_STAGE1_QUESTIONS,
+  'senior-devops': MARCUS_STAGE2_BLITZ_QUESTIONS,
+  cto: STAGE3_TASKS,
+  hr: OLIVIA_STAGE4_QUESTIONS,
 }

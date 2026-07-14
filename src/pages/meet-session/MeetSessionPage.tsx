@@ -4,9 +4,12 @@ import { useDispatch, useSelector } from 'react-redux'
 import { useTranslation } from 'react-i18next'
 import { MockLlmBackend } from '../../api/llmClient'
 import { INTERVIEWERS } from '../../domain/models/InterviewerProfile'
-import { QUESTION_BANKS } from '../../domain/models/questionBank'
+import { QUESTION_BANKS, PIPELINE_QUESTION_SETS } from '../../domain/models/questionBank'
+import { STAGE3_REFERENCE_SOLUTIONS } from '../../domain/models/stage3Tasks'
 import { assessSession } from '../../domain/assessment'
+import { canEnterStage, OFFER_STAGE_INDEX, PIPELINE_STAGES } from '../../domain/pipeline'
 import { addMessage, MAX_QUESTIONS, startInterview } from '../../store/interviewSlice'
+import { completeStage } from '../../store/pipelineSlice'
 import { appendHistory } from '../../store/historySlice'
 import { shuffle } from '../../shared/lib/shuffle'
 import { AvatarTile } from '../../shared/ui/AvatarTile'
@@ -29,33 +32,56 @@ import { isSpeechRecognitionSupported, startListening, type ListeningHandle } fr
 import type { RootState } from '../../store'
 
 export default function MeetSessionPage() {
-  const { interviewerId } = useParams<{ interviewerId: string }>()
+  const params = useParams<{ interviewerId?: string; stageIndex?: string }>()
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const { t, i18n } = useTranslation()
   const { messages, selectedQuestions, questionCount, finished } = useSelector((state: RootState) => state.interview)
+  const { completedStages } = useSelector((state: RootState) => state.pipeline)
   const [draft, setDraft] = useState('')
   const [streaming, setStreaming] = useState('')
   const [messagesOpen, setMessagesOpen] = useState(true)
   const [cameraOn, setCameraOn] = useState(false)
   const [captionsOn, setCaptionsOn] = useState(true)
   const [listening, setListening] = useState(false)
+  const [showReference, setShowReference] = useState(false)
   const backendRef = useRef(new MockLlmBackend())
   const listeningHandleRef = useRef<ListeningHandle | null>(null)
   const historySavedRef = useRef(false)
+  const stageCompletedRef = useRef(false)
+  const askingRef = useRef(false)
+
+  const parsedStageIndex = params.stageIndex !== undefined ? Number(params.stageIndex) : NaN
+  const pipelineMode = !Number.isNaN(parsedStageIndex)
+  const pipelineStageIndex = pipelineMode ? parsedStageIndex : null
+  const interviewerId = pipelineMode ? (PIPELINE_STAGES[parsedStageIndex]?.interviewerId ?? undefined) : params.interviewerId
 
   const interviewer = INTERVIEWERS.find((i) => i.id === interviewerId)
   const lang = i18n.resolvedLanguage === 'ua' ? 'ua' : 'en'
 
+  // Sequential state-machine guard: a pipeline stage is only reachable once
+  // every prior stage is completed — deep-linking straight to Stage 3 while
+  // Stage 1/2 are unfinished bounces back to the pipeline overview.
+  useEffect(() => {
+    if (!pipelineMode) return
+    if (pipelineStageIndex === null || pipelineStageIndex >= OFFER_STAGE_INDEX || !canEnterStage(completedStages, pipelineStageIndex)) {
+      navigate('/pipeline')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pipelineMode, pipelineStageIndex])
+
   useEffect(() => {
     if (!interviewerId) return
+    if (pipelineMode && (pipelineStageIndex === null || !canEnterStage(completedStages, pipelineStageIndex))) return
     // Guards against React StrictMode's dev-only double-invoke of this effect
     // (mount → cleanup → mount), which would otherwise fire two overlapping
     // askNextQuestion(0, ...) calls and duplicate the first question.
     let cancelled = false
-    const bank = QUESTION_BANKS[interviewerId] ?? []
-    const questions = shuffle(bank).slice(0, MAX_QUESTIONS)
+    const questions = pipelineMode
+      ? (PIPELINE_QUESTION_SETS[interviewerId] ?? [])
+      : shuffle(QUESTION_BANKS[interviewerId] ?? []).slice(0, MAX_QUESTIONS)
     historySavedRef.current = false
+    stageCompletedRef.current = false
     dispatch(startInterview({ interviewerId, questions }))
 
     async function run() {
@@ -86,6 +112,10 @@ export default function MeetSessionPage() {
   useEffect(() => {
     if (finished) {
       saveToHistory()
+      if (pipelineMode && pipelineStageIndex !== null && !stageCompletedRef.current) {
+        stageCompletedRef.current = true
+        dispatch(completeStage({ stageIndex: pipelineStageIndex, selectedQuestions, messages }))
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [finished])
@@ -105,21 +135,26 @@ export default function MeetSessionPage() {
   async function askNextQuestion(questionIndex: number, questions = selectedQuestions) {
     const question = questions[questionIndex]
     if (!question) return
+    // Synchronous ref lock (not state) so a fast double-Enter can't slip
+    // through the async gap between dispatching Q(n) and React committing
+    // the resulting questionCount — which would otherwise re-ask Q(n).
+    askingRef.current = true
     setStreaming('')
     const text = question[lang]
     const full = await backendRef.current.generate(text, (token) => setStreaming((prev) => prev + token))
     dispatch(addMessage({ author: 'interviewer', questionIndex }))
     setStreaming('')
+    askingRef.current = false
     if (interviewer) {
       speak(full, lang, interviewer.voiceGender)
     }
   }
 
   function sendMessage(text: string) {
-    if (!text.trim()) return
+    if (!text.trim() || askingRef.current) return
     dispatch(addMessage({ author: 'user', text: text.trim() }))
     setDraft('')
-    if (questionCount < MAX_QUESTIONS) {
+    if (questionCount < selectedQuestions.length) {
       askNextQuestion(questionCount)
     }
   }
@@ -130,7 +165,7 @@ export default function MeetSessionPage() {
 
   function handleHangup() {
     saveToHistory()
-    navigate('/interview')
+    navigate(pipelineMode ? '/pipeline' : '/interview')
   }
 
   function toggleListening() {
@@ -210,6 +245,26 @@ export default function MeetSessionPage() {
               assessment={assessment}
               interviewerRole={interviewer.role}
               onViewHistory={() => navigate('/history')}
+              pipelineCta={
+                pipelineMode && pipelineStageIndex !== null
+                  ? {
+                      label:
+                        pipelineStageIndex + 1 === OFFER_STAGE_INDEX
+                          ? t('pipeline.viewOffer')
+                          : t('pipeline.continueTo', { title: t(PIPELINE_STAGES[pipelineStageIndex + 1].titleKey) }),
+                      onClick: () =>
+                        navigate(
+                          pipelineStageIndex + 1 === OFFER_STAGE_INDEX
+                            ? '/pipeline/offer'
+                            : `/pipeline/stage/${pipelineStageIndex + 1}`,
+                        ),
+                    }
+                  : null
+              }
+              referenceSolutions={pipelineMode && interviewer.id === 'cto' ? STAGE3_REFERENCE_SOLUTIONS : null}
+              referenceOpen={showReference}
+              onToggleReference={() => setShowReference((v) => !v)}
+              lang={lang}
             />
           ) : (
             <div style={{ textAlign: 'center' }}>
@@ -319,22 +374,27 @@ export default function MeetSessionPage() {
         >
           <h2 style={{ fontSize: 16, margin: '0 0 0.5rem' }}>{t('meet.messagesTitle')}</h2>
           <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {messages.map((m, idx) => (
-              <div
-                key={idx}
-                style={{
-                  alignSelf: m.author === 'user' ? 'flex-end' : 'flex-start',
-                  background: m.author === 'user' ? interviewer.color : '#2a2b33',
-                  color: m.author === 'user' ? '#1c1d23' : '#f3f4f6',
-                  borderRadius: 12,
-                  padding: '0.5rem 0.75rem',
-                  maxWidth: '85%',
-                  whiteSpace: 'pre-wrap',
-                }}
-              >
-                {m.author === 'user' ? m.text : interviewerMessageText(m)}
-              </div>
-            ))}
+            {messages.map((m, idx) => {
+              const isTask = m.author === 'interviewer' && 'questionIndex' in m && Boolean(selectedQuestions[m.questionIndex]?.isTaskPrompt)
+              return (
+                <div
+                  key={idx}
+                  style={{
+                    alignSelf: m.author === 'user' ? 'flex-end' : 'flex-start',
+                    background: m.author === 'user' ? interviewer.color : '#2a2b33',
+                    color: m.author === 'user' ? '#1c1d23' : '#f3f4f6',
+                    borderRadius: 12,
+                    padding: '0.5rem 0.75rem',
+                    maxWidth: isTask ? '100%' : '85%',
+                    whiteSpace: 'pre-wrap',
+                    fontFamily: isTask ? 'monospace' : undefined,
+                    fontSize: isTask ? 12 : undefined,
+                  }}
+                >
+                  {m.author === 'user' ? m.text : interviewerMessageText(m)}
+                </div>
+              )
+            })}
             {streaming && (
               <div style={{ alignSelf: 'flex-start', background: '#2a2b33', borderRadius: 12, padding: '0.5rem 0.75rem' }}>
                 {streaming}
@@ -351,9 +411,12 @@ export default function MeetSessionPage() {
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 placeholder={t('meet.sendPlaceholder') ?? ''}
+                disabled={Boolean(streaming)}
                 style={{ flex: 1, padding: '0.5rem', borderRadius: 8, border: '1px solid #383944', background: '#1c1d23', color: 'inherit' }}
               />
-              <button onClick={handleSend}>{t('meet.send')}</button>
+              <button onClick={handleSend} disabled={Boolean(streaming)}>
+                {t('meet.send')}
+              </button>
             </div>
           )}
         </aside>
@@ -366,10 +429,20 @@ function AssessmentCard({
   assessment,
   interviewerRole,
   onViewHistory,
+  pipelineCta,
+  referenceSolutions,
+  referenceOpen,
+  onToggleReference,
+  lang,
 }: {
   assessment: ReturnType<typeof assessSession>
   interviewerRole: string
   onViewHistory: () => void
+  pipelineCta: { label: string; onClick: () => void } | null
+  referenceSolutions: typeof STAGE3_REFERENCE_SOLUTIONS | null
+  referenceOpen: boolean
+  onToggleReference: () => void
+  lang: 'en' | 'ua'
 }) {
   const { t } = useTranslation()
   return (
@@ -395,9 +468,44 @@ function AssessmentCard({
         <dd style={{ margin: 0, fontWeight: 600, textAlign: 'right' }}>{assessment.categories.join(', ') || '—'}</dd>
       </dl>
 
-      <button onClick={onViewHistory} style={{ width: '100%' }}>
-        {t('meet.viewHistory')}
-      </button>
+      {referenceSolutions && (
+        <div style={{ margin: '0 0 1rem' }}>
+          <button onClick={onToggleReference} style={{ width: '100%' }}>
+            {referenceOpen ? t('pipeline.hideReference') : t('pipeline.showReference')}
+          </button>
+          {referenceOpen && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+              {referenceSolutions.map((sol) => (
+                <pre
+                  key={sol.taskId}
+                  style={{
+                    whiteSpace: 'pre-wrap',
+                    fontFamily: 'monospace',
+                    fontSize: 12,
+                    background: '#111318',
+                    border: '1px solid #2e303a',
+                    borderRadius: 8,
+                    padding: '0.5rem 0.75rem',
+                    margin: 0,
+                  }}
+                >
+                  {sol[lang]}
+                </pre>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {pipelineCta ? (
+        <button onClick={pipelineCta.onClick} style={{ width: '100%' }}>
+          {pipelineCta.label}
+        </button>
+      ) : (
+        <button onClick={onViewHistory} style={{ width: '100%' }}>
+          {t('meet.viewHistory')}
+        </button>
+      )}
     </div>
   )
 }

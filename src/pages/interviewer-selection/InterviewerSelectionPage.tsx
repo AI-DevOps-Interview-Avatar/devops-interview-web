@@ -23,9 +23,14 @@ export default function InterviewerSelectionPage() {
       <header style={{ marginBottom: '1.5rem' }}>
         <h1 style={{ margin: 0 }}>{t('selection.title')}</h1>
         <p style={{ color: '#9ca3af' }}>{t('selection.subtitle')}</p>
-        <Link to="/history" style={{ color: '#c084fc' }}>
-          {t('selection.historyLink')}
-        </Link>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <Link to="/pipeline" style={{ color: '#c084fc' }}>
+            {t('selection.pipelineLink')}
+          </Link>
+          <Link to="/history" style={{ color: '#c084fc' }}>
+            {t('selection.historyLink')}
+          </Link>
+        </div>
       </header>
 
       <div

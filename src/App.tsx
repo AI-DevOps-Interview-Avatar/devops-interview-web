@@ -3,6 +3,8 @@ import SplashPage from './pages/splash/SplashPage'
 import InterviewerSelectionPage from './pages/interviewer-selection/InterviewerSelectionPage'
 import MeetSessionPage from './pages/meet-session/MeetSessionPage'
 import HistoryPage from './pages/history/HistoryPage'
+import PipelineHomePage from './pages/pipeline/PipelineHomePage'
+import OfferPage from './pages/pipeline/OfferPage'
 
 function App() {
   return (
@@ -11,6 +13,9 @@ function App() {
         <Route path="/" element={<SplashPage />} />
         <Route path="/interview" element={<InterviewerSelectionPage />} />
         <Route path="/interview/:interviewerId" element={<MeetSessionPage />} />
+        <Route path="/pipeline" element={<PipelineHomePage />} />
+        <Route path="/pipeline/stage/:stageIndex" element={<MeetSessionPage />} />
+        <Route path="/pipeline/offer" element={<OfferPage />} />
         <Route path="/history" element={<HistoryPage />} />
       </Routes>
     </BrowserRouter>

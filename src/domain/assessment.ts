@@ -1,6 +1,5 @@
 import type { BankQuestion } from './models/questionBank'
 import type { ChatMessage } from '../store/interviewSlice'
-import { MAX_QUESTIONS } from '../store/interviewSlice'
 
 export interface SessionAssessment {
   askedCount: number
@@ -28,7 +27,7 @@ export function assessSession(messages: ChatMessage[], selectedQuestions: BankQu
     return sum + text.trim().split(/\s+/).filter(Boolean).length
   }, 0)
   const avgAnswerWords = answeredCount > 0 ? Math.round(totalWords / answeredCount) : 0
-  const completionRate = Math.round((answeredCount / MAX_QUESTIONS) * 100)
+  const completionRate = selectedQuestions.length > 0 ? Math.round((answeredCount / selectedQuestions.length) * 100) : 0
   const categories = Array.from(new Set(selectedQuestions.slice(0, askedCount).map((q) => q.category)))
 
   return { askedCount, answeredCount, completionRate, avgAnswerWords, categories }

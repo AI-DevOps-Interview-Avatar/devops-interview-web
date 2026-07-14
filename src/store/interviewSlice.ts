@@ -1,6 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { BankQuestion } from '../domain/models/questionBank'
 
+/** Default question count for standalone practice sessions (shuffled bank subset). Pipeline stages use their own fixed-length script instead. */
 export const MAX_QUESTIONS = 5
 
 export type ChatMessage =
@@ -12,7 +13,7 @@ export type ChatMessage =
 
 interface InterviewState {
   interviewerId: string | null
-  /** The random subset of the persona's question bank picked for this session. */
+  /** The subset (random for practice, fixed script for pipeline stages) of the persona's questions picked for this session. */
   selectedQuestions: BankQuestion[]
   messages: ChatMessage[]
   questionCount: number
@@ -42,9 +43,9 @@ const interviewSlice = createSlice({
       state.messages.push(action.payload)
       if (action.payload.author === 'interviewer' && 'questionIndex' in action.payload) {
         state.questionCount += 1
-      } else if (action.payload.author === 'user' && state.questionCount >= MAX_QUESTIONS) {
+      } else if (action.payload.author === 'user' && state.questionCount >= state.selectedQuestions.length) {
         // Only finish once the candidate has answered the last question —
-        // otherwise the input box would vanish right as Q5 is asked.
+        // otherwise the input box would vanish right as the last one is asked.
         state.finished = true
       }
     },
