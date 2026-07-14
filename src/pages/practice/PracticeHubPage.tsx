@@ -1,22 +1,35 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LanguageSwitcher } from '../../shared/ui/LanguageSwitcher'
-import { PIPELINE_STAGES } from '../../domain/pipeline'
-import { PIPELINE_QUESTION_SETS } from '../../domain/models/questionBank'
+import { QUESTION_BANKS, type BankQuestion } from '../../domain/models/questionBank'
 import { INTERVIEWERS } from '../../domain/models/InterviewerProfile'
 import { QUIZ_QUESTIONS, scoreQuiz } from '../../domain/models/quizBank'
+import { shuffle } from '../../shared/lib/shuffle'
 
 type Tab = 'questions' | 'quiz'
+
+/** Practice pool per persona — a random subset of the full question bank, not the fixed pipeline script. */
+const PRACTICE_POOL_SIZE = 8
 
 export default function PracticeHubPage() {
   const { t, i18n } = useTranslation()
   const lang = i18n.resolvedLanguage === 'ua' ? 'ua' : 'en'
   const [tab, setTab] = useState<Tab>('questions')
-  const [openStage, setOpenStage] = useState<number | null>(0)
+  const [openPersona, setOpenPersona] = useState<string | null>(INTERVIEWERS[0]?.id ?? null)
+  const [poolVersion, setPoolVersion] = useState(0)
   const [answers, setAnswers] = useState<(number | undefined)[]>(() => Array(QUIZ_QUESTIONS.length).fill(undefined))
   const [submitted, setSubmitted] = useState(false)
 
   const result = useMemo(() => scoreQuiz(QUIZ_QUESTIONS, answers), [answers])
+
+  const pools = useMemo(() => {
+    const map: Record<string, BankQuestion[]> = {}
+    for (const interviewer of INTERVIEWERS) {
+      map[interviewer.id] = shuffle(QUESTION_BANKS[interviewer.id] ?? []).slice(0, PRACTICE_POOL_SIZE)
+    }
+    return map
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- poolVersion is the deliberate reshuffle trigger
+  }, [poolVersion])
 
   function selectAnswer(questionIndex: number, optionIndex: number) {
     if (submitted) return
@@ -82,14 +95,20 @@ export default function PracticeHubPage() {
 
       {tab === 'questions' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {PIPELINE_STAGES.filter((s) => s.interviewerId).map((stage, index) => {
-            const interviewer = INTERVIEWERS.find((i) => i.id === stage.interviewerId)
-            const questions = stage.interviewerId ? (PIPELINE_QUESTION_SETS[stage.interviewerId] ?? []) : []
-            const isOpen = openStage === index
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <p style={{ margin: 0, color: '#9ca3af', fontSize: 13 }}>{t('practice.poolNote')}</p>
+            <button onClick={() => setPoolVersion((v) => v + 1)} className="nav-pill" style={{ cursor: 'pointer' }}>
+              {t('practice.newSet')}
+            </button>
+          </div>
+
+          {INTERVIEWERS.map((interviewer) => {
+            const questions = pools[interviewer.id] ?? []
+            const isOpen = openPersona === interviewer.id
             return (
-              <div key={stage.key} style={{ borderRadius: 12, border: '1px solid #383944', background: '#2a2b33', overflow: 'hidden' }}>
+              <div key={interviewer.id} style={{ borderRadius: 12, border: '1px solid #383944', background: '#2a2b33', overflow: 'hidden' }}>
                 <button
-                  onClick={() => setOpenStage(isOpen ? null : index)}
+                  onClick={() => setOpenPersona(isOpen ? null : interviewer.id)}
                   style={{
                     width: '100%',
                     display: 'flex',
@@ -104,8 +123,7 @@ export default function PracticeHubPage() {
                   }}
                 >
                   <span>
-                    {t('pipeline.stageLabel', { number: index + 1 })}: {t(stage.titleKey)}
-                    {interviewer && <span style={{ color: '#9ca3af' }}> — {interviewer.role}</span>}
+                    {interviewer.role} <span style={{ color: '#9ca3af' }}>— {interviewer.voiceName}</span>
                   </span>
                   <span>{isOpen ? '▲' : '▼'}</span>
                 </button>

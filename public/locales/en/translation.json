@@ -119,6 +119,8 @@
       "questions": "Questions",
       "quiz": "Quiz"
     },
+    "poolNote": "A random pick from the full question bank — a new set every time you open this page.",
+    "newSet": "New question set ↻",
     "quiz": {
       "submit": "Check answers",
       "retry": "Retry",

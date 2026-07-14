@@ -44,7 +44,18 @@ export default function JobResourcesPage() {
                     background: '#2a2b33',
                   }}
                 >
-                  <strong style={{ minWidth: 140 }}>{item.name}</strong>
+                  {item.url ? (
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ minWidth: 140, fontWeight: 700, color: '#c084fc' }}
+                    >
+                      {item.name} ↗
+                    </a>
+                  ) : (
+                    <strong style={{ minWidth: 140 }}>{item.name}</strong>
+                  )}
                   <span style={{ color: '#d1d5db' }}>{item[lang]}</span>
                 </div>
               ))}

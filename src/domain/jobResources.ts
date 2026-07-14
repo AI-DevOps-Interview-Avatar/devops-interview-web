@@ -2,6 +2,8 @@ export interface JobResourceItem {
   name: string
   ua: string
   en: string
+  /** Omitted where the canonical URL isn't reliably known (e.g. Telegram channel handles) — rendered as plain text instead of a link. */
+  url?: string
 }
 
 export interface JobResourceCategory {
@@ -18,16 +20,16 @@ export const JOB_RESOURCE_CATEGORIES: JobResourceCategory[] = [
     titleUa: 'Україна',
     titleEn: 'Ukraine',
     items: [
-      { name: 'DOU.ua', ua: 'Найбільший ресурс для пошуку роботи в IT-сфері.', en: 'The largest job-search resource for the IT field.' },
-      { name: 'Djinni.co', ua: 'Домінуюча "анонімна" платформа найму для tech-ринку України.', en: 'The dominant "anonymous" recruitment platform for the Ukrainian tech market.' },
-      { name: 'Державний центр зайнятості', ua: 'Багато вакансій для робочих спеціальностей та освіти.', en: "State Employment Center — many vacancies for trade and education professionals." },
-      { name: 'Work.ua', ua: 'Найбільший сайт пошуку роботи в Україні, є розділ для студентів.', en: "Ukraine's largest job-search site, with a dedicated student section." },
-      { name: 'Robota.ua', ua: 'Другий найбільший ресурс, є розділ популярних професій.', en: 'Second-largest resource, with a popular-professions section.' },
-      { name: 'Grc.ua', ua: 'Близько 4000 вакансій, є розділ віддаленої роботи.', en: 'About 4,000 listings, with a remote-work section.' },
-      { name: 'Jooble', ua: 'Категорії "позмінно", "щоденна оплата", "віддалена робота".', en: 'Categories for shift work, daily pay, and remote work.' },
-      { name: 'Happy Monday', ua: 'Вакансії від українських та зарубіжних роботодавців.', en: 'Listings from Ukrainian and foreign employers.' },
-      { name: 'Upwork', ua: 'Один із найпопулярніших міжнародних сайтів для фрілансерів.', en: 'One of the most popular international freelance platforms.' },
-      { name: 'Fiverr', ua: 'Міжнародний сайт для представників творчих професій.', en: 'International platform for creative professionals.' },
+      { name: 'DOU.ua', url: 'https://dou.ua', ua: 'Найбільший ресурс для пошуку роботи в IT-сфері.', en: 'The largest job-search resource for the IT field.' },
+      { name: 'Djinni.co', url: 'https://djinni.co', ua: 'Домінуюча "анонімна" платформа найму для tech-ринку України.', en: 'The dominant "anonymous" recruitment platform for the Ukrainian tech market.' },
+      { name: 'Державний центр зайнятості', url: 'https://www.dcz.gov.ua', ua: 'Багато вакансій для робочих спеціальностей та освіти.', en: "State Employment Center — many vacancies for trade and education professionals." },
+      { name: 'Work.ua', url: 'https://www.work.ua', ua: 'Найбільший сайт пошуку роботи в Україні, є розділ для студентів.', en: "Ukraine's largest job-search site, with a dedicated student section." },
+      { name: 'Robota.ua', url: 'https://robota.ua', ua: 'Другий найбільший ресурс, є розділ популярних професій.', en: 'Second-largest resource, with a popular-professions section.' },
+      { name: 'Grc.ua', url: 'https://grc.ua', ua: 'Близько 4000 вакансій, є розділ віддаленої роботи.', en: 'About 4,000 listings, with a remote-work section.' },
+      { name: 'Jooble', url: 'https://jooble.org', ua: 'Категорії "позмінно", "щоденна оплата", "віддалена робота".', en: 'Categories for shift work, daily pay, and remote work.' },
+      { name: 'Happy Monday', url: 'https://happymonday.ua', ua: 'Вакансії від українських та зарубіжних роботодавців.', en: 'Listings from Ukrainian and foreign employers.' },
+      { name: 'Upwork', url: 'https://www.upwork.com', ua: 'Один із найпопулярніших міжнародних сайтів для фрілансерів.', en: 'One of the most popular international freelance platforms.' },
+      { name: 'Fiverr', url: 'https://www.fiverr.com', ua: 'Міжнародний сайт для представників творчих професій.', en: 'International platform for creative professionals.' },
     ],
   },
   {
@@ -49,8 +51,8 @@ export const JOB_RESOURCE_CATEGORIES: JobResourceCategory[] = [
     titleUa: 'Глобальні лідери',
     titleEn: 'Global leaders',
     items: [
-      { name: 'LinkedIn', ua: 'Платформа №1 за обсягом вакансій та нетворкінгом.', en: 'The #1 platform by listing volume and networking.' },
-      { name: 'Indeed', ua: 'Величезний агрегатор вакансій, найкраще для США/ЄС.', en: 'A huge job aggregator, best for the US/EU.' },
+      { name: 'LinkedIn', url: 'https://www.linkedin.com', ua: 'Платформа №1 за обсягом вакансій та нетворкінгом.', en: 'The #1 platform by listing volume and networking.' },
+      { name: 'Indeed', url: 'https://www.indeed.com', ua: 'Величезний агрегатор вакансій, найкраще для США/ЄС.', en: 'A huge job aggregator, best for the US/EU.' },
       { name: 'Google Jobs', ua: 'Вбудований пошуковик Google, веде на сторінки кар’єри компаній.', en: "Google's built-in job search, links directly to company career pages." },
     ],
   },
@@ -59,11 +61,11 @@ export const JOB_RESOURCE_CATEGORIES: JobResourceCategory[] = [
     titleUa: 'Європа',
     titleEn: 'Europe',
     items: [
-      { name: 'Landing.Jobs', ua: 'Tech-ринок Європи (Португалія, Іспанія, Німеччина), допомога з релокацією.', en: 'European tech market (Portugal, Spain, Germany), relocation help.' },
-      { name: 'Otta', ua: 'Топові стартапи Лондона, Берліна, Амстердама, фільтри за культурою.', en: 'Top startups in London, Berlin, Amsterdam, with culture filters.' },
-      { name: 'Honey Pot', ua: 'Платформа зворотного найму, популярна в Німеччині/Австрії.', en: 'Reverse-recruiting platform, popular in Germany/Austria.' },
-      { name: 'Malt', ua: 'Фріланс/контрактна робота (Франція, Іспанія).', en: 'Freelance/contract work (France, Spain).' },
-      { name: 'Pracuj.pl', ua: 'Найбільша платформа пошуку роботи в Польщі.', en: 'The largest job-search platform in Poland.' },
+      { name: 'Landing.Jobs', url: 'https://landing.jobs', ua: 'Tech-ринок Європи (Португалія, Іспанія, Німеччина), допомога з релокацією.', en: 'European tech market (Portugal, Spain, Germany), relocation help.' },
+      { name: 'Otta', url: 'https://otta.com', ua: 'Топові стартапи Лондона, Берліна, Амстердама, фільтри за культурою.', en: 'Top startups in London, Berlin, Amsterdam, with culture filters.' },
+      { name: 'Honey Pot', url: 'https://www.honeypot.io', ua: 'Платформа зворотного найму, популярна в Німеччині/Австрії.', en: 'Reverse-recruiting platform, popular in Germany/Austria.' },
+      { name: 'Malt', url: 'https://www.malt.com', ua: 'Фріланс/контрактна робота (Франція, Іспанія).', en: 'Freelance/contract work (France, Spain).' },
+      { name: 'Pracuj.pl', url: 'https://www.pracuj.pl', ua: 'Найбільша платформа пошуку роботи в Польщі.', en: 'The largest job-search platform in Poland.' },
     ],
   },
   {
@@ -71,9 +73,9 @@ export const JOB_RESOURCE_CATEGORIES: JobResourceCategory[] = [
     titleUa: 'США',
     titleEn: 'United States',
     items: [
-      { name: 'Dice', ua: 'Спеціалізований сайт для IT (сисадміни, DevOps, SRE).', en: 'IT-specialized site (sysadmins, DevOps, SRE).' },
-      { name: 'Wellfound', ua: 'Роботи в американських стартапах, часто з опціонами.', en: 'Jobs at US startups, often with equity options.' },
-      { name: 'Built In', ua: 'Великі тех-хаби США (SF, Остін, Чикаго, Нью-Йорк).', en: 'Major US tech hubs (SF, Austin, Chicago, NYC).' },
+      { name: 'Dice', url: 'https://www.dice.com', ua: 'Спеціалізований сайт для IT (сисадміни, DevOps, SRE).', en: 'IT-specialized site (sysadmins, DevOps, SRE).' },
+      { name: 'Wellfound', url: 'https://wellfound.com', ua: 'Роботи в американських стартапах, часто з опціонами.', en: 'Jobs at US startups, often with equity options.' },
+      { name: 'Built In', url: 'https://builtin.com', ua: 'Великі тех-хаби США (SF, Остін, Чикаго, Нью-Йорк).', en: 'Major US tech hubs (SF, Austin, Chicago, NYC).' },
     ],
   },
   {
@@ -81,10 +83,10 @@ export const JOB_RESOURCE_CATEGORIES: JobResourceCategory[] = [
     titleUa: 'Віддалена робота (Remote-first)',
     titleEn: 'Remote-first',
     items: [
-      { name: 'We Work Remotely', ua: 'Найстаріша та найбільш довірена remote-спільнота.', en: 'The oldest and most trusted remote-work community.' },
-      { name: 'Remote OK', ua: 'Велика кількість вакансій для розробників та інженерів.', en: 'A large volume of listings for developers and engineers.' },
-      { name: 'Remotive', ua: 'Перевірені (vetted) вакансії, менше спаму.', en: 'Vetted listings, less spam.' },
-      { name: 'FlexJobs', ua: 'Платна підписка, гарантія відсутності шахрайства.', en: 'Paid subscription, scam-free guarantee.' },
+      { name: 'We Work Remotely', url: 'https://weworkremotely.com', ua: 'Найстаріша та найбільш довірена remote-спільнота.', en: 'The oldest and most trusted remote-work community.' },
+      { name: 'Remote OK', url: 'https://remoteok.com', ua: 'Велика кількість вакансій для розробників та інженерів.', en: 'A large volume of listings for developers and engineers.' },
+      { name: 'Remotive', url: 'https://remotive.com', ua: 'Перевірені (vetted) вакансії, менше спаму.', en: 'Vetted listings, less spam.' },
+      { name: 'FlexJobs', url: 'https://www.flexjobs.com', ua: 'Платна підписка, гарантія відсутності шахрайства.', en: 'Paid subscription, scam-free guarantee.' },
     ],
   },
   {
@@ -92,9 +94,9 @@ export const JOB_RESOURCE_CATEGORIES: JobResourceCategory[] = [
     titleUa: 'Фріланс-тестування (Crowdsourced Testing)',
     titleEn: 'Freelance testing (crowdsourced)',
     items: [
-      { name: 'uTest', ua: 'Найбільша платформа, є навчання (Academy).', en: 'The largest platform, includes a training Academy.' },
-      { name: 'Test IO', ua: 'Тестування мобільних додатків/сайтів відомих брендів (Європа).', en: "Testing mobile apps/sites for well-known brands (Europe)." },
-      { name: 'UserTesting', ua: 'Оплата за відгуки про зручність використання (Usability).', en: 'Paid usability-testing feedback.' },
+      { name: 'uTest', url: 'https://www.utest.com', ua: 'Найбільша платформа, є навчання (Academy).', en: 'The largest platform, includes a training Academy.' },
+      { name: 'Test IO', url: 'https://test.io', ua: 'Тестування мобільних додатків/сайтів відомих брендів (Європа).', en: "Testing mobile apps/sites for well-known brands (Europe)." },
+      { name: 'UserTesting', url: 'https://www.usertesting.com', ua: 'Оплата за відгуки про зручність використання (Usability).', en: 'Paid usability-testing feedback.' },
     ],
   },
 ]
