@@ -213,3 +213,145 @@ button {
   color: var(--accent);
   border: 1px solid var(--accent);
 }
+
+/* ---------- Responsive breakpoints (mobile-first) ----------
+   Mobile:  < 640px    (base rules below, no media query needed)
+   Tablet:  640–1023px (min-width: 640px)
+   Desktop: >= 1024px  (min-width: 1024px)
+--------------------------------------------------------------- */
+
+.control-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.control-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.control-btn--wide {
+  width: 84px;
+  border-radius: 24px;
+}
+
+/* Present/More/Info/People are permanently-disabled stub controls in this
+   mock — hide them below tablet width so the functional bottom bar
+   (mic/camera/captions, hangup, chat) keeps comfortable 48px touch targets
+   on narrow phones instead of overflowing. */
+.control-btn--decorative {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .control-btn--decorative {
+    display: grid;
+  }
+}
+
+.meet-shell {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  height: 100dvh;
+  background: #0e0e11;
+  color: #f3f4f6;
+  overflow: hidden;
+}
+
+.meet-main {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.meet-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #202124;
+  transition: gap 0.3s ease, padding 0.3s ease;
+}
+
+@media (max-width: 639px) {
+  .meet-toolbar {
+    gap: 0.5rem;
+    padding: 0.6rem 0.75rem;
+  }
+}
+
+/* Mobile: off-canvas full-screen drawer (there's no room for a persistent
+   320px column next to the video on a phone). Tablet/desktop: an inline
+   column that widens/narrows, matching the original Meet-style layout. */
+.meet-sidebar {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: #111318;
+  padding: 1rem;
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+}
+
+.meet-sidebar--open {
+  transform: translateX(0);
+}
+
+.meet-sidebar-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid #383944;
+  background: #1c1d23;
+  color: inherit;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+@media (min-width: 640px) {
+  .meet-sidebar {
+    position: relative;
+    inset: auto;
+    z-index: auto;
+    transform: none;
+    width: 280px;
+    flex-shrink: 0;
+    transition: width 0.3s ease, opacity 0.3s ease, padding 0.3s ease;
+  }
+
+  .meet-sidebar:not(.meet-sidebar--open) {
+    width: 0;
+    padding: 0;
+    opacity: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .meet-sidebar-close {
+    display: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  .meet-sidebar {
+    width: 320px;
+  }
+}

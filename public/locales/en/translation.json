@@ -59,6 +59,7 @@
       "cameraOff": "Turn on camera",
       "captions": "Toggle captions",
       "chat": "Toggle chat",
+      "closeChat": "Close chat",
       "hangup": "Leave call",
       "listening": "Listening…",
       "notAvailable": "Not available in this mock interview"

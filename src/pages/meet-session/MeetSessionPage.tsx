@@ -40,7 +40,10 @@ export default function MeetSessionPage() {
   const { completedStages } = useSelector((state: RootState) => state.pipeline)
   const [draft, setDraft] = useState('')
   const [streaming, setStreaming] = useState('')
-  const [messagesOpen, setMessagesOpen] = useState(true)
+  // Chat defaults open on tablet/desktop (inline column, matches the original Meet-style
+  // layout) but closed on mobile, where it's a full-screen drawer that would otherwise
+  // cover the interviewer's video the instant the page loads.
+  const [messagesOpen, setMessagesOpen] = useState(() => window.matchMedia('(min-width: 640px)').matches)
   const [cameraOn, setCameraOn] = useState(false)
   const [captionsOn, setCaptionsOn] = useState(true)
   const [listening, setListening] = useState(false)
@@ -216,17 +219,8 @@ export default function MeetSessionPage() {
     (lastInterviewerMessage?.author === 'interviewer' ? interviewerMessageText(lastInterviewerMessage) : '')
 
   return (
-    <main
-      style={{
-        position: 'relative',
-        display: 'flex',
-        height: '100vh',
-        background: '#0e0e11',
-        color: '#f3f4f6',
-        overflow: 'hidden',
-      }}
-    >
-      <section style={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+    <main className="meet-shell">
+      <section className="meet-main">
         <LanguageSwitcher />
 
         {/* Full-bleed video tile, Meet-style — no card border/padding around it. */}
@@ -294,17 +288,10 @@ export default function MeetSessionPage() {
           {!finished && <SelfCameraTile active={cameraOn} />}
         </div>
 
-        {/* Meet toolbar: grouped pills — mic/camera/captions/present/more, hangup, info/people/chat. */}
-        <footer
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '1.5rem',
-            padding: '0.75rem 1rem',
-            background: '#202124',
-          }}
-        >
+        {/* Meet toolbar: grouped pills — mic/camera/captions/present/more, hangup, info/people/chat.
+            Present/More/Info/People are permanently-disabled stubs, so they collapse away below
+            tablet width (see .control-btn--decorative) to keep the bar usable on a phone. */}
+        <footer className="meet-toolbar">
           <div style={{ display: 'flex', gap: '0.5rem', background: '#2a2b2f', borderRadius: 999, padding: 6 }}>
             <ControlButton
               label={listening ? t('meet.controls.micStop') : t('meet.controls.micStart')}
@@ -331,10 +318,10 @@ export default function MeetSessionPage() {
             >
               <CaptionsIcon />
             </ControlButton>
-            <ControlButton label={t('meet.controls.notAvailable')} disabled>
+            <ControlButton label={t('meet.controls.notAvailable')} decorative disabled>
               <PresentIcon />
             </ControlButton>
-            <ControlButton label={t('meet.controls.notAvailable')} disabled>
+            <ControlButton label={t('meet.controls.notAvailable')} decorative disabled>
               <MoreVertIcon />
             </ControlButton>
           </div>
@@ -344,10 +331,10 @@ export default function MeetSessionPage() {
           </ControlButton>
 
           <div style={{ display: 'flex', gap: '0.5rem', background: '#2a2b2f', borderRadius: 999, padding: 6 }}>
-            <ControlButton label={t('meet.controls.notAvailable')} disabled>
+            <ControlButton label={t('meet.controls.notAvailable')} decorative disabled>
               <InfoIcon />
             </ControlButton>
-            <ControlButton label={t('meet.controls.notAvailable')} disabled>
+            <ControlButton label={t('meet.controls.notAvailable')} decorative disabled>
               <PeopleIcon />
             </ControlButton>
             <ControlButton
@@ -361,19 +348,24 @@ export default function MeetSessionPage() {
         </footer>
       </section>
 
-      {messagesOpen && (
-        <aside
-          style={{
-            width: 320,
-            background: '#111318',
-            display: 'flex',
-            flexDirection: 'column',
-            padding: '1rem',
-            gap: '0.5rem',
-          }}
-        >
-          <h2 style={{ fontSize: 16, margin: '0 0 0.5rem' }}>{t('meet.messagesTitle')}</h2>
-          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+      {/* Always mounted (not conditionally rendered) so the open/close transition can
+          actually animate; `inert` drops it from tab order and hit-testing while closed. */}
+      <aside
+        className={`meet-sidebar${messagesOpen ? ' meet-sidebar--open' : ''}`}
+        inert={!messagesOpen || undefined}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+          <h2 style={{ fontSize: 16, margin: 0 }}>{t('meet.messagesTitle')}</h2>
+          <button
+            type="button"
+            className="meet-sidebar-close"
+            onClick={() => setMessagesOpen(false)}
+            aria-label={t('meet.controls.closeChat')}
+          >
+            ✕
+          </button>
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {messages.map((m, idx) => {
               const isTask = m.author === 'interviewer' && 'questionIndex' in m && Boolean(selectedQuestions[m.questionIndex]?.isTaskPrompt)
               return (
@@ -419,8 +411,7 @@ export default function MeetSessionPage() {
               </button>
             </div>
           )}
-        </aside>
-      )}
+      </aside>
     </main>
   )
 }
@@ -516,6 +507,7 @@ function ControlButton({
   active,
   disabled,
   wide,
+  decorative,
   title,
   onClick,
   children,
@@ -525,6 +517,8 @@ function ControlButton({
   active?: boolean
   disabled?: boolean
   wide?: boolean
+  /** Non-functional stub controls (Present/More/Info/People) — hidden below tablet width. */
+  decorative?: boolean
   title?: string
   onClick?: () => void
   children: React.ReactNode
@@ -535,13 +529,9 @@ function ControlButton({
       title={title ?? label}
       onClick={onClick}
       disabled={disabled}
+      className={`control-btn${wide ? ' control-btn--wide' : ''}${decorative ? ' control-btn--decorative' : ''}`}
       style={{
-        width: wide ? 72 : 44,
-        height: 44,
-        borderRadius: wide ? 22 : '50%',
         border: 'none',
-        display: 'grid',
-        placeItems: 'center',
         background: active ? '#c084fc' : tone,
         color: active ? '#1c1d23' : '#fff',
         cursor: disabled ? 'not-allowed' : 'pointer',
