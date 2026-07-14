@@ -20,8 +20,8 @@ describe('generateOfferLetter', () => {
     expect(offer.location).toBe('—')
   })
 
-  it('reuses the salary/conditions answer for notice period when none was captured separately', () => {
-    const offer = generateOfferLetter({ salaryExpectations: '$4000, available in 2 weeks' }, 'John Smith')
-    expect(offer.noticePeriod).toBe('$4000, available in 2 weeks')
+  it('fills notice period from its own captured profile field', () => {
+    const offer = generateOfferLetter({ noticePeriod: '2 weeks' }, 'John Smith')
+    expect(offer.noticePeriod).toBe('2 weeks')
   })
 })

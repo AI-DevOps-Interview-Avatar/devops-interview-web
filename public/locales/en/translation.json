@@ -7,7 +7,10 @@
     "title": "Choose Your Interviewer",
     "subtitle": "Select a role to start your mock DevOps interview",
     "historyLink": "History",
-    "pipelineLink": "Full hiring pipeline (5 stages) →"
+    "pipelineLink": "Full hiring pipeline (5 stages) →",
+    "practiceLink": "Practice & quiz →",
+    "resumeReviewLink": "Resume review →",
+    "resourcesLink": "Job search resources →"
   },
   "difficulty": {
     "Easy": "Easy",
@@ -108,5 +111,33 @@
     "copied": "Copied!",
     "backToPipeline": "← Back to pipeline",
     "letterBody": "Dear {{candidateName}},\n\nCongratulations! We are pleased to offer you the {{position}} position, based on your compensation range of {{salaryExpectations}} and a start date aligned with a notice period of {{noticePeriod}}. We understand you are based in {{location}}.\n\nThis is a mock offer letter generated from your Stage 1 screening answers — no automated skill grading is involved (see DIA-84).\n\nWelcome aboard!"
+  },
+  "practice": {
+    "title": "Practice & Self-Prep",
+    "subtitle": "Browse through every interview question on your own, or test yourself with a quiz.",
+    "tabs": {
+      "questions": "Questions",
+      "quiz": "Quiz"
+    },
+    "quiz": {
+      "submit": "Check answers",
+      "retry": "Retry",
+      "result": "Result: {{correct}} of {{total}} ({{percentage}}%)"
+    }
+  },
+  "resumeReview": {
+    "title": "Resume Review",
+    "subtitle": "Paste your resume text and get an automated improvement checklist (nothing is sent to a server).",
+    "showSample": "Show sample resume",
+    "hideSample": "Hide sample resume",
+    "inputLabel": "Resume text",
+    "inputPlaceholder": "Paste your resume text here…",
+    "checkButton": "Check resume",
+    "scoreLabel": "Score: {{score}}/100"
+  },
+  "resources": {
+    "title": "Job Search Resources",
+    "subtitle": "A curated list of sites, Telegram channels, and tips for finding DevOps roles.",
+    "tipsTitle": "Tips for success"
   }
 }

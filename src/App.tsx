@@ -5,6 +5,9 @@ import MeetSessionPage from './pages/meet-session/MeetSessionPage'
 import HistoryPage from './pages/history/HistoryPage'
 import PipelineHomePage from './pages/pipeline/PipelineHomePage'
 import OfferPage from './pages/pipeline/OfferPage'
+import PracticeHubPage from './pages/practice/PracticeHubPage'
+import ResumeReviewPage from './pages/resume-review/ResumeReviewPage'
+import JobResourcesPage from './pages/resources/JobResourcesPage'
 
 function App() {
   return (
@@ -16,6 +19,9 @@ function App() {
         <Route path="/pipeline" element={<PipelineHomePage />} />
         <Route path="/pipeline/stage/:stageIndex" element={<MeetSessionPage />} />
         <Route path="/pipeline/offer" element={<OfferPage />} />
+        <Route path="/practice" element={<PracticeHubPage />} />
+        <Route path="/resume-review" element={<ResumeReviewPage />} />
+        <Route path="/resources" element={<JobResourcesPage />} />
         <Route path="/history" element={<HistoryPage />} />
       </Routes>
     </BrowserRouter>

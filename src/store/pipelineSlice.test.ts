@@ -39,7 +39,7 @@ describe('pipelineSlice: stage-machine transitions', () => {
 
 describe('pipelineSlice: candidate profile capture (feeds the Stage 5 offer letter)', () => {
   it('captures the answer immediately following a profileField-tagged question', () => {
-    const salaryQuestionIndex = RECRUITER_STAGE1_QUESTIONS.findIndex((q) => q.id === 'stage1-conditions')
+    const salaryQuestionIndex = RECRUITER_STAGE1_QUESTIONS.findIndex((q) => q.id === 'stage1-salary')
     const locationQuestionIndex = RECRUITER_STAGE1_QUESTIONS.findIndex((q) => q.id === 'stage1-location')
 
     const messages: ChatMessage[] = [

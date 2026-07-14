@@ -27,6 +27,15 @@ export default function InterviewerSelectionPage() {
           <Link to="/pipeline" style={{ color: '#c084fc' }}>
             {t('selection.pipelineLink')}
           </Link>
+          <Link to="/practice" style={{ color: '#c084fc' }}>
+            {t('selection.practiceLink')}
+          </Link>
+          <Link to="/resume-review" style={{ color: '#c084fc' }}>
+            {t('selection.resumeReviewLink')}
+          </Link>
+          <Link to="/resources" style={{ color: '#c084fc' }}>
+            {t('selection.resourcesLink')}
+          </Link>
           <Link to="/history" style={{ color: '#c084fc' }}>
             {t('selection.historyLink')}
           </Link>
