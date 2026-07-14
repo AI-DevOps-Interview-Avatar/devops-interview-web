@@ -8,6 +8,7 @@ import OfferPage from './pages/pipeline/OfferPage'
 import PracticeHubPage from './pages/practice/PracticeHubPage'
 import ResumeReviewPage from './pages/resume-review/ResumeReviewPage'
 import JobResourcesPage from './pages/resources/JobResourcesPage'
+import DevelopersPage from './pages/developers/DevelopersPage'
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
         <Route path="/practice" element={<PracticeHubPage />} />
         <Route path="/resume-review" element={<ResumeReviewPage />} />
         <Route path="/resources" element={<JobResourcesPage />} />
+        <Route path="/developers" element={<DevelopersPage />} />
         <Route path="/history" element={<HistoryPage />} />
       </Routes>
     </BrowserRouter>

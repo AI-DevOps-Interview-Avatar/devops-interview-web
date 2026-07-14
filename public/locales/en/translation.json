@@ -10,7 +10,8 @@
     "pipelineLink": "Full hiring pipeline (5 stages) →",
     "practiceLink": "Practice & quiz →",
     "resumeReviewLink": "Resume review →",
-    "resourcesLink": "Job search resources →"
+    "resourcesLink": "Job search resources →",
+    "developersLink": "Developers →"
   },
   "difficulty": {
     "Easy": "Easy",
@@ -141,5 +142,9 @@
     "title": "Job Search Resources",
     "subtitle": "A curated list of sites, Telegram channels, and tips for finding DevOps roles.",
     "tipsTitle": "Tips for success"
+  },
+  "developers": {
+    "title": "Developers",
+    "subtitle": "The team and channels behind this project."
   }
 }
