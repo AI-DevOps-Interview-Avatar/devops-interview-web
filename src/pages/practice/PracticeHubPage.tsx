@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LanguageSwitcher } from '../../shared/ui/LanguageSwitcher'
+import { PageNav } from '../../shared/ui/PageNav'
 import { QUESTION_BANKS, type BankQuestion } from '../../domain/models/questionBank'
 import { INTERVIEWERS } from '../../domain/models/InterviewerProfile'
 import { QUIZ_QUESTIONS, scoreQuiz } from '../../domain/models/quizBank'
@@ -51,6 +52,7 @@ export default function PracticeHubPage() {
         position: 'relative',
         minHeight: '100vh',
         padding: '2rem',
+        paddingTop: '4.5rem',
         maxWidth: 760,
         margin: '0 auto',
         background: '#16171d',
@@ -58,6 +60,7 @@ export default function PracticeHubPage() {
       }}
     >
       <LanguageSwitcher />
+      <PageNav />
 
       <header style={{ marginBottom: '1.5rem' }}>
         <h1 style={{ margin: 0 }}>{t('practice.title')}</h1>

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { canEnterStage, OFFER_STAGE_INDEX } from '../../domain/pipeline'
 import { generateOfferLetter } from '../../domain/offerLetter'
 import { LanguageSwitcher } from '../../shared/ui/LanguageSwitcher'
+import { PageNav } from '../../shared/ui/PageNav'
 import type { RootState } from '../../store'
 
 export default function OfferPage() {
@@ -45,6 +46,7 @@ export default function OfferPage() {
         position: 'relative',
         minHeight: '100vh',
         padding: '2rem',
+        paddingTop: '4.5rem',
         maxWidth: 640,
         margin: '0 auto',
         background: '#16171d',
@@ -52,6 +54,7 @@ export default function OfferPage() {
       }}
     >
       <LanguageSwitcher />
+      <PageNav />
       <h1>{t('offer.title')}</h1>
       <p style={{ color: '#9ca3af' }}>{t('offer.subtitle')}</p>
 

@@ -81,6 +81,10 @@
   "language": {
     "label": "Мова"
   },
+  "nav": {
+    "back": "Назад",
+    "home": "На головну"
+  },
   "pipeline": {
     "home": {
       "title": "Процес найму",

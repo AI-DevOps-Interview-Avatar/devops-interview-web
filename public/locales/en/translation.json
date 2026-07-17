@@ -81,6 +81,10 @@
   "language": {
     "label": "Language"
   },
+  "nav": {
+    "back": "Back",
+    "home": "Home"
+  },
   "pipeline": {
     "home": {
       "title": "Hiring Pipeline",

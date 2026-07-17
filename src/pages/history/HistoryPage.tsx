@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { averageCompletionFor, loadHistory, type SessionRecord } from '../../store/historySlice'
 import { INTERVIEWERS } from '../../domain/models/InterviewerProfile'
 import { LanguageSwitcher } from '../../shared/ui/LanguageSwitcher'
+import { PageNav } from '../../shared/ui/PageNav'
 
 export default function HistoryPage() {
   const [history] = useState<SessionRecord[]>(() => loadHistory())
@@ -17,6 +18,7 @@ export default function HistoryPage() {
         position: 'relative',
         minHeight: '100vh',
         padding: '2rem',
+        paddingTop: '4.5rem',
         maxWidth: 640,
         margin: '0 auto',
         background: '#16171d',
@@ -24,6 +26,7 @@ export default function HistoryPage() {
       }}
     >
       <LanguageSwitcher />
+      <PageNav />
       <h1>{t('history.title')}</h1>
       {history.length === 0 && <p>{t('history.empty')}</p>}
 

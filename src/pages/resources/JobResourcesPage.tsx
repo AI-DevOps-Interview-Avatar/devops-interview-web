@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { LanguageSwitcher } from '../../shared/ui/LanguageSwitcher'
+import { PageNav } from '../../shared/ui/PageNav'
 import { JOB_RESOURCE_CATEGORIES, JOB_SEARCH_TIPS } from '../../domain/jobResources'
 
 export default function JobResourcesPage() {
@@ -12,6 +13,7 @@ export default function JobResourcesPage() {
         position: 'relative',
         minHeight: '100vh',
         padding: '2rem',
+        paddingTop: '4.5rem',
         maxWidth: 760,
         margin: '0 auto',
         background: '#16171d',
@@ -19,6 +21,7 @@ export default function JobResourcesPage() {
       }}
     >
       <LanguageSwitcher />
+      <PageNav />
 
       <header style={{ marginBottom: '1.5rem' }}>
         <h1 style={{ margin: 0 }}>{t('resources.title')}</h1>

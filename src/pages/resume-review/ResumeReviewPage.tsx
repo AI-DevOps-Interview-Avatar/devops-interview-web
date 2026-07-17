@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LanguageSwitcher } from '../../shared/ui/LanguageSwitcher'
+import { PageNav } from '../../shared/ui/PageNav'
 import { reviewResume, SAMPLE_RESUME } from '../../domain/resumeReview'
 
 export default function ResumeReviewPage() {
@@ -18,6 +19,7 @@ export default function ResumeReviewPage() {
         position: 'relative',
         minHeight: '100vh',
         padding: '2rem',
+        paddingTop: '4.5rem',
         maxWidth: 760,
         margin: '0 auto',
         background: '#16171d',
@@ -25,6 +27,7 @@ export default function ResumeReviewPage() {
       }}
     >
       <LanguageSwitcher />
+      <PageNav />
 
       <header style={{ marginBottom: '1.5rem' }}>
         <h1 style={{ margin: 0 }}>{t('resumeReview.title')}</h1>

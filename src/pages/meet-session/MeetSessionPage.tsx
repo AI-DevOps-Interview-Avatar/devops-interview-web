@@ -14,6 +14,7 @@ import { appendHistory } from '../../store/historySlice'
 import { shuffle } from '../../shared/lib/shuffle'
 import { AvatarTile } from '../../shared/ui/AvatarTile'
 import { LanguageSwitcher } from '../../shared/ui/LanguageSwitcher'
+import { PageNav } from '../../shared/ui/PageNav'
 import { SelfCameraTile } from '../../shared/ui/SelfCameraTile'
 import {
   CallEndIcon,
@@ -222,6 +223,7 @@ export default function MeetSessionPage() {
     <main className="meet-shell">
       <section className="meet-main">
         <LanguageSwitcher />
+        <PageNav onBeforeNavigate={saveToHistory} />
 
         {/* Full-bleed video tile, Meet-style — no card border/padding around it. */}
         <div

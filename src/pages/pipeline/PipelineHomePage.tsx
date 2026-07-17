@@ -5,6 +5,7 @@ import { PIPELINE_STAGES, OFFER_STAGE_INDEX, canEnterStage } from '../../domain/
 import { INTERVIEWERS } from '../../domain/models/InterviewerProfile'
 import { AvatarTile } from '../../shared/ui/AvatarTile'
 import { LanguageSwitcher } from '../../shared/ui/LanguageSwitcher'
+import { PageNav } from '../../shared/ui/PageNav'
 import type { RootState } from '../../store'
 
 export default function PipelineHomePage() {
@@ -29,11 +30,13 @@ export default function PipelineHomePage() {
         position: 'relative',
         minHeight: '100vh',
         padding: '2rem',
+        paddingTop: '4.5rem',
         background: '#16171d',
         color: '#f3f4f6',
       }}
     >
       <LanguageSwitcher />
+      <PageNav />
 
       <header style={{ marginBottom: '1.5rem' }}>
         <h1 style={{ margin: 0 }}>{t('pipeline.home.title')}</h1>
