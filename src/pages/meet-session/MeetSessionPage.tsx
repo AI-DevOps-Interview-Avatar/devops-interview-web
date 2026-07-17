@@ -48,9 +48,14 @@ export default function MeetSessionPage() {
   const [cameraOn, setCameraOn] = useState(false)
   const [captionsOn, setCaptionsOn] = useState(true)
   const [listening, setListening] = useState(false)
+  // Drives the on-video recording banner: 'listening' while the mic is live,
+  // then 'sent'/'empty' for a couple seconds after it stops so the user gets
+  // explicit start/stop feedback instead of the mic icon silently changing.
+  const [recordingStatus, setRecordingStatus] = useState<'idle' | 'listening' | 'sent' | 'empty'>('idle')
   const [showReference, setShowReference] = useState(false)
   const backendRef = useRef(new MockLlmBackend())
   const listeningHandleRef = useRef<ListeningHandle | null>(null)
+  const capturedTranscriptRef = useRef(false)
   const historySavedRef = useRef(false)
   const stageCompletedRef = useRef(false)
   const askingRef = useRef(false)
@@ -172,25 +177,37 @@ export default function MeetSessionPage() {
     navigate(pipelineMode ? '/pipeline' : '/interview')
   }
 
+  // 'sent'/'empty' are transient — flip back to 'idle' after a couple seconds
+  // so the on-video banner doesn't linger forever after recording stops.
+  useEffect(() => {
+    if (recordingStatus !== 'sent' && recordingStatus !== 'empty') return
+    const id = setTimeout(() => setRecordingStatus('idle'), 2500)
+    return () => clearTimeout(id)
+  }, [recordingStatus])
+
   function toggleListening() {
     if (listening) {
       listeningHandleRef.current?.stop()
       return
     }
     stopSpeaking()
+    capturedTranscriptRef.current = false
     const handle = startListening(
       lang,
       (transcript) => {
-        // Voice answers are one-shot (interimResults=false): the moment we
-        // get a final transcript, send it — don't leave it sitting in the
-        // input box waiting for a manual "Send" click.
+        // The recognizer now keeps listening (continuous mode) until the
+        // user stops it, so this only fires once with the full answer —
+        // send it straight away rather than waiting for a manual "Send".
+        capturedTranscriptRef.current = true
         const combined = draft ? `${draft} ${transcript}` : transcript
         sendMessage(combined)
       },
       () => {
         setListening(false)
         listeningHandleRef.current = null
+        setRecordingStatus(capturedTranscriptRef.current ? 'sent' : 'empty')
       },
+      () => setRecordingStatus('listening'),
     )
     if (handle) {
       listeningHandleRef.current = handle
@@ -266,6 +283,41 @@ export default function MeetSessionPage() {
             <div style={{ textAlign: 'center' }}>
               <AvatarTile interviewer={interviewer} isSpeaking={Boolean(streaming)} size={280} />
               <p style={{ marginTop: '0.75rem', fontWeight: 600 }}>{interviewer.voiceName}</p>
+            </div>
+          )}
+
+          {!finished && recordingStatus !== 'idle' && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 24,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                background: 'rgba(0,0,0,0.6)',
+                padding: '0.4rem 0.9rem',
+                borderRadius: 999,
+                fontSize: 13,
+              }}
+            >
+              {recordingStatus === 'listening' && (
+                <>
+                  <span
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      background: '#f44336',
+                      animation: 'meet-rec-pulse 1.2s ease-in-out infinite',
+                    }}
+                  />
+                  {t('meet.controls.listening')}
+                </>
+              )}
+              {recordingStatus === 'sent' && `✓ ${t('meet.controls.recordingSent')}`}
+              {recordingStatus === 'empty' && t('meet.controls.recordingEmpty')}
             </div>
           )}
 

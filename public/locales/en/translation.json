@@ -62,6 +62,8 @@
       "closeChat": "Close chat",
       "hangup": "Leave call",
       "listening": "Listening…",
+      "recordingSent": "Answer sent",
+      "recordingEmpty": "No speech detected",
       "notAvailable": "Not available in this mock interview"
     }
   },

@@ -190,6 +190,11 @@ button {
   100% { transform: translate(-50%, -50%) rotate(360deg) translateX(105px) rotate(-360deg); }
 }
 
+@keyframes meet-rec-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
 /* ---------- Glassmorphism cards ---------- */
 
 .glass-card {
