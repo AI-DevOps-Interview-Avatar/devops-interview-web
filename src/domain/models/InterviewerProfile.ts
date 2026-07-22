@@ -17,6 +17,12 @@ export interface InterviewerProfile {
    */
   stateMachine?: string
   /**
+   * Як вписувати риг у круглу плитку. "cover" (дефолт) заповнює коло без
+   * letterbox-полосок; "contain" вписує персонажа цілком (менший розмір,
+   * як був оригінальний вигляд наших власних ригів).
+   */
+  fit?: 'cover' | 'contain'
+  /**
    * Множник масштабу рига в круглій плитці (дефолт 1). Використовується, коли
    * артборд має зайвий відступ і персонаж виглядає задрібним у колі.
    */
@@ -46,6 +52,8 @@ export const INTERVIEWERS: InterviewerProfile[] = [
     color: '#00C2FF',
     description: 'CI/CD, Kubernetes, IaC, інциденти та їх розбір.',
     riveFile: 'avatar_senior_devops.riv',
+    // Оригінальний вигляд (як був): персонаж вписаний у коло, не обрізаний.
+    fit: 'contain',
     pipelineStage: 2,
   },
   {
