@@ -20,13 +20,14 @@ interface AvatarTileProps {
 export function AvatarTile({ interviewer, isSpeaking, size = 320 }: AvatarTileProps) {
   const stateMachine = interviewer.stateMachine ?? DEFAULT_STATE_MACHINE
   const scale = interviewer.avatarScale ?? 1
+  // Cover (дефолт) заповнює коло без полосок; Contain вписує персонажа цілком
+  // (оригінальний, менший вигляд наших власних ригів, напр. Marcus).
+  const fit = interviewer.fit === 'contain' ? Fit.Contain : Fit.Cover
   const { rive, RiveComponent } = useRive({
     src: `${import.meta.env.BASE_URL}avatars/${interviewer.riveFile}`,
     stateMachines: stateMachine,
     autoplay: true,
-    // Fit.Cover заповнює квадратний контейнер, прибираючи letterbox-полоски
-    // навколо арту з іншим співвідношенням сторін (напр. David/Olivia риги).
-    layout: new Layout({ fit: Fit.Cover, alignment: Alignment.Center }),
+    layout: new Layout({ fit, alignment: Alignment.Center }),
   })
 
   useEffect(() => {
