@@ -9,8 +9,18 @@ export interface InterviewerProfile {
   voiceGender: VoiceGender
   color: string
   description: string
-  /** Файл у public/avatars/, що містить "State Machine 1" з bool-входом "speak". */
+  /** Файл у public/avatars/, що містить state machine з опційним bool-входом "speak". */
   riveFile: string
+  /**
+   * Назва state machine всередині riveFile. Дефолт "State Machine 1" (наш власний
+   * контракт зі speak-входом); community-риги часто звуться просто "State Machine".
+   */
+  stateMachine?: string
+  /**
+   * Множник масштабу рига в круглій плитці (дефолт 1). Використовується, коли
+   * артборд має зайвий відступ і персонаж виглядає задрібним у колі.
+   */
+  avatarScale?: number
   /** Порядковий номер персони в 5-стадійному пайплайні найму (1-4; Stage 5 — Final Offer без персони). */
   pipelineStage: 1 | 2 | 3 | 4
 }
@@ -46,7 +56,8 @@ export const INTERVIEWERS: InterviewerProfile[] = [
     voiceGender: 'male',
     color: '#A855F7',
     description: 'Архітектура, компроміси, масштабування, вартість.',
-    riveFile: 'avatar_cto.riv',
+    riveFile: '2911-6075-rive-2-25d-avatar-with-pointer-tracking.riv',
+    stateMachine: 'State Machine',
     pipelineStage: 3,
   },
   {
@@ -60,7 +71,8 @@ export const INTERVIEWERS: InterviewerProfile[] = [
     voiceGender: 'female',
     color: '#FFB020',
     description: 'Командна хімія, вирішення конфліктів, робота під тиском.',
-    riveFile: 'avatar_hr.riv',
+    riveFile: '21942-41210-lil-avatar.riv',
+    stateMachine: 'State Machine',
     pipelineStage: 4,
   },
 ]
