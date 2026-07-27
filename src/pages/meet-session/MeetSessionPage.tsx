@@ -6,7 +6,7 @@ import { MockLlmBackend } from '../../api/llmClient'
 import { INTERVIEWERS } from '../../domain/models/InterviewerProfile'
 import { QUESTION_BANKS, PIPELINE_QUESTION_SETS } from '../../domain/models/questionBank'
 import { STAGE3_REFERENCE_SOLUTIONS } from '../../domain/models/stage3Tasks'
-import { assessSession } from '../../domain/assessment'
+import { assessSession, sessionLevel } from '../../domain/assessment'
 import { canEnterStage, OFFER_STAGE_INDEX, PIPELINE_STAGES } from '../../domain/pipeline'
 import { addMessage, MAX_QUESTIONS, requestNextQuestion, startInterview } from '../../store/interviewSlice'
 import { completeStage } from '../../store/pipelineSlice'
@@ -179,7 +179,7 @@ export default function MeetSessionPage() {
     const assessment = assessSession(messages, selectedQuestions)
     appendHistory({
       interviewerId,
-      level: selectedQuestions[0].level,
+      level: sessionLevel(selectedQuestions),
       finishedAt: new Date().toISOString(),
       ...assessment,
     })
