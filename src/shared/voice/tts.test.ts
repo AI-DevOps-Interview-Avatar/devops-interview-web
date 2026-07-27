@@ -1,5 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { resetVoiceCache, resolveVoice, speak, splitIntoChunks, stopSpeaking, voicesReady } from './tts'
+import {
+  isLanguageSpeakable,
+  resetVoiceCache,
+  resolveVoice,
+  speak,
+  splitIntoChunks,
+  stopSpeaking,
+  subscribeSpeaking,
+  voicesReady,
+} from './tts'
 
 type FakeVoice = Pick<SpeechSynthesisVoice, 'name' | 'lang' | 'localService'>
 
@@ -100,6 +109,9 @@ function stubSpeechSynthesis(voices: SpeechSynthesisVoice[], { async = false } =
 
 afterEach(() => {
   vi.useRealTimers()
+  // Before the stub goes away: the module tracks whether audio is playing, and
+  // a test that ends mid-utterance would otherwise hand that state to the next.
+  if (typeof window !== 'undefined') stopSpeaking()
   vi.unstubAllGlobals()
   resetVoiceCache()
 })
@@ -168,6 +180,123 @@ describe('resolveVoice', () => {
 
     expect(resolveVoice(single, 'ua', 'male').sharedVoiceFallback).toBe(true)
     expect(resolveVoice(single, 'ua', 'female').sharedVoiceFallback).toBe(true)
+  })
+})
+
+/**
+ * Voice lists as the browsers actually report them on a Windows 10 machine —
+ * the platform the exploratory testing ran on. Chrome adds its network-backed
+ * "Google" voices on top of the system ones; Edge ships the same Microsoft
+ * pack; Safari (macOS) has neither and its Ukrainian coverage is a single
+ * voice, which is the case that forces the shared-voice fallback.
+ */
+const BROWSER_VOICES = {
+  chrome: [
+    voice('Microsoft Ostap - Ukrainian (Ukraine)', 'uk-UA'),
+    voice('Microsoft Polina - Ukrainian (Ukraine)', 'uk-UA'),
+    voice('Google українська', 'uk-UA', false),
+    voice('Microsoft David - English (United States)', 'en-US'),
+    voice('Microsoft Zira - English (United States)', 'en-US'),
+    voice('Google US English', 'en-US', false),
+  ],
+  edge: [
+    voice('Microsoft Ostap - Ukrainian (Ukraine)', 'uk-UA'),
+    voice('Microsoft Polina - Ukrainian (Ukraine)', 'uk-UA'),
+    voice('Microsoft David - English (United States)', 'en-US'),
+    voice('Microsoft Zira - English (United States)', 'en-US'),
+  ],
+  safari: [voice('Lesya', 'uk-UA'), voice('Samantha', 'en-US'), voice('Alex', 'en-US')],
+}
+
+describe('resolveVoice across real browser voice lists', () => {
+  for (const [browser, voices] of Object.entries(BROWSER_VOICES)) {
+    it(`keeps each persona on its own gendered voice in ${browser}`, () => {
+      for (const lang of ['ua', 'en'] as const) {
+        const male = resolveVoice(voices, lang, 'male')
+        const female = resolveVoice(voices, lang, 'female')
+
+        expect(male.voice, `${browser}/${lang}/male`).not.toBeNull()
+        expect(female.voice, `${browser}/${lang}/female`).not.toBeNull()
+        // Safari's single Ukrainian voice is the one case where both personas
+        // legitimately share it — and then prosody has to do the separating.
+        if (male.sharedVoiceFallback) {
+          expect(male.voice?.name).toBe(female.voice?.name)
+        } else {
+          expect(male.voice?.name, `${browser}/${lang}`).not.toBe(female.voice?.name)
+        }
+      }
+    })
+
+    it(`never leaks a voice from another language in ${browser}`, () => {
+      for (const gender of ['male', 'female'] as const) {
+        expect(resolveVoice(voices, 'ua', gender).voice?.lang.toLowerCase()).toMatch(/^uk/)
+        expect(resolveVoice(voices, 'en', gender).voice?.lang.toLowerCase()).toMatch(/^en/)
+      }
+    })
+  }
+
+  it('gives the same answer however the browser orders its list', () => {
+    const reversed = [...BROWSER_VOICES.chrome].reverse()
+
+    for (const gender of ['male', 'female'] as const) {
+      expect(resolveVoice(BROWSER_VOICES.chrome, 'ua', gender).voice?.name).toBe(
+        resolveVoice(reversed, 'ua', gender).voice?.name,
+      )
+    }
+  })
+})
+
+describe('isLanguageSpeakable', () => {
+  it('reports a locale the browser cannot speak', async () => {
+    stubSpeechSynthesis([voice('Microsoft Zira - English (United States)', 'en-US')])
+
+    expect(await isLanguageSpeakable('en')).toBe(true)
+    expect(await isLanguageSpeakable('ua')).toBe(false)
+  })
+
+  it('stays quiet when the engine never reported any voices at all', async () => {
+    // No list is not the same as no coverage — the engine may still speak with
+    // its own default, and a false alarm here would be worse than silence.
+    const synth = stubSpeechSynthesis([], { async: true })
+    vi.useFakeTimers()
+    const pending = isLanguageSpeakable('ua')
+    vi.advanceTimersByTime(2000)
+    vi.useRealTimers()
+    synth.emitVoicesChanged()
+
+    expect(await pending).toBe(true)
+  })
+})
+
+describe('subscribeSpeaking', () => {
+  it('reports playback start and stop, and stops reporting once unsubscribed', async () => {
+    const synth = stubSpeechSynthesis([voice('Microsoft Polina', 'uk-UA')])
+    const states: boolean[] = []
+    const unsubscribe = subscribeSpeaking((value) => states.push(value))
+
+    speak('Розкажіть про себе', 'ua', 'female')
+    await vi.waitFor(() => expect(states).toEqual([true]))
+
+    synth.drain()
+    expect(states).toEqual([true, false])
+
+    unsubscribe()
+    speak('Ще питання', 'ua', 'female')
+    await vi.waitFor(() => expect(synth.spoken).toHaveLength(1))
+    expect(states).toEqual([true, false])
+  })
+
+  it('goes quiet when playback is cancelled mid-answer', async () => {
+    const synth = stubSpeechSynthesis([voice('Microsoft Polina', 'uk-UA')])
+    const states: boolean[] = []
+    const unsubscribe = subscribeSpeaking((value) => states.push(value))
+
+    speak('Довге питання', 'ua', 'female')
+    await vi.waitFor(() => expect(synth.spoken.length).toBeGreaterThan(0))
+    stopSpeaking()
+
+    expect(states).toEqual([true, false])
+    unsubscribe()
   })
 })
 

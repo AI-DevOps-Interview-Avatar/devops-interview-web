@@ -28,7 +28,7 @@ import {
   VideocamIcon,
   VideocamOffIcon,
 } from '../../shared/ui/icons'
-import { speak, stopSpeaking } from '../../shared/voice/tts'
+import { isLanguageSpeakable, speak, stopSpeaking, subscribeSpeaking } from '../../shared/voice/tts'
 import {
   isSpeechRecognitionSupported,
   startListening,
@@ -63,6 +63,10 @@ export default function MeetSessionPage() {
   // "allow the microphone in your browser settings" is an instruction to act on,
   // not a notification to glance at.
   const [micError, setMicError] = useState<SpeechErrorCode | null>(null)
+  /** True only while audio is actually playing — drives the avatar's mouth. */
+  const [speaking, setSpeaking] = useState(false)
+  /** Set when the browser has no voice at all for the interview language. */
+  const [voiceUnavailable, setVoiceUnavailable] = useState(false)
   const [showReference, setShowReference] = useState(false)
   const backendRef = useRef(new MockLlmBackend())
   const listeningHandleRef = useRef<ListeningHandle | null>(null)
@@ -134,6 +138,23 @@ export default function MeetSessionPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [interviewerId])
+
+  // The rig's mouth follows the synthesizer, not the token stream that produced
+  // the text — those are different moments, and the old wiring animated the
+  // wrong one.
+  useEffect(() => subscribeSpeaking(setSpeaking), [])
+
+  // A locale with no installed voice produces silence rather than an error, so
+  // without this the candidate just waits for audio that is never coming.
+  useEffect(() => {
+    let cancelled = false
+    void isLanguageSpeakable(lang).then((speakable) => {
+      if (!cancelled) setVoiceUnavailable(!speakable)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [lang])
 
   // Single owner of every audio resource this page holds. The interview effect
   // above only tears down on interviewer change, which left the synthesizer and
@@ -383,31 +404,19 @@ export default function MeetSessionPage() {
             />
           ) : (
             <div style={{ textAlign: 'center' }}>
-              <AvatarTile interviewer={interviewer} isSpeaking={Boolean(streaming)} size={280} />
+              <AvatarTile interviewer={interviewer} isSpeaking={speaking} size={280} />
               <p style={{ marginTop: '0.75rem', fontWeight: 600 }}>{interviewer.voiceName}</p>
             </div>
           )}
 
-          {!finished && micError && (
-            <div
-              role="alert"
-              style={{
-                position: 'absolute',
-                top: 24,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                maxWidth: 'min(90%, 460px)',
-                background: 'rgba(120, 26, 26, 0.92)',
-                border: '1px solid #f4433680',
-                padding: '0.5rem 0.9rem',
-                borderRadius: 10,
-                fontSize: 13,
-                lineHeight: 1.35,
-                textAlign: 'center',
-              }}
-            >
-              {t(`meet.controls.micErrors.${micError}`)}
-            </div>
+          {!finished && micError && <AlertBanner>{t(`meet.controls.micErrors.${micError}`)}</AlertBanner>}
+
+          {/* Sits below the mic error so both can be true at once — a machine
+              with no Ukrainian voice pack often has no microphone either. */}
+          {!finished && voiceUnavailable && (
+            <AlertBanner tone="warning" top={micError ? 76 : 24}>
+              {t('meet.controls.voiceUnavailable')}
+            </AlertBanner>
           )}
 
           {/* Hidden while an error is up: the two would otherwise stack, and the
@@ -679,6 +688,43 @@ function AssessmentCard({
           {t('meet.viewHistory')}
         </button>
       )}
+    </div>
+  )
+}
+
+/** Overlaid notice on the video tile: something the candidate needs to act on. */
+function AlertBanner({
+  children,
+  tone = 'error',
+  top = 24,
+}: {
+  children: React.ReactNode
+  tone?: 'error' | 'warning'
+  top?: number
+}) {
+  const palette =
+    tone === 'error'
+      ? { background: 'rgba(120, 26, 26, 0.92)', border: '#f4433680' }
+      : { background: 'rgba(120, 90, 20, 0.92)', border: '#f5a62380' }
+  return (
+    <div
+      role="alert"
+      style={{
+        position: 'absolute',
+        top,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        maxWidth: 'min(90%, 460px)',
+        background: palette.background,
+        border: `1px solid ${palette.border}`,
+        padding: '0.5rem 0.9rem',
+        borderRadius: 10,
+        fontSize: 13,
+        lineHeight: 1.35,
+        textAlign: 'center',
+      }}
+    >
+      {children}
     </div>
   )
 }
