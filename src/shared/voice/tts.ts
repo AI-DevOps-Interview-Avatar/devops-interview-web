@@ -193,9 +193,14 @@ export function resolveVoice(
   // Browsers speak in the assigned voice's own language regardless of
   // utterance.lang, so falling back to a cross-language voice here would
   // silently keep speaking English after switching the UI to Ukrainian.
-  // No matching voice for this language → leave utterance.voice unset and let
-  // the browser pick its own default for utterance.lang.
-  if (sameLanguage.length === 0) return { voice: null, sharedVoiceFallback: false }
+  //
+  // Nothing for this language: leave `voice` unset and let the engine do what
+  // it can with `utterance.lang`. That is not always silence — Chrome on Linux
+  // exposes only its own network voices, none of them Ukrainian, yet still
+  // hands the utterance to the system synthesizer, which speaks it in whatever
+  // single default voice it has. Every persona then sounds identical, so
+  // prosody is the only thing left to tell them apart.
+  if (sameLanguage.length === 0) return { voice: null, sharedVoiceFallback: true }
 
   const byName = sameLanguage.find((voice) => NAME_PATTERNS[gender].test(voice.name))
   if (byName) return { voice: byName, sharedVoiceFallback: false }
