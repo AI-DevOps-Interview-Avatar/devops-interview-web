@@ -98,20 +98,20 @@ entirely.
 Linux ships no speech voices of its own, so the browser has to get them from
 somewhere — and the two sources behave very differently.
 
-**Chrome ignores `speech-dispatcher` by default.** It reports its own set of
-network-backed Google voices instead, about nineteen of them. That set covers
-Russian and Polish but **not Ukrainian**, so a stock Chrome on Linux cannot
-speak a Ukrainian interview at all: the session screen shows the
-unspeakable-locale warning, and any text handed to the engine is read by the
-English default with an obvious accent. Installing RHVoice changes nothing on
-its own — Chrome never asks. The local voices appear only when it is started
-with the flag:
+**Chrome does not expose local voices at all.** It reports its own set of
+network-backed Google voices — nineteen of them, covering Russian and Polish but
+**not Ukrainian**. `--enable-speech-dispatcher` does not change this: verified on
+Chrome 150 / Ubuntu 24.04, `getVoices()` returns the same nineteen entries with
+or without the flag, and not one `speech-dispatcher` voice among them.
 
-```bash
-google-chrome --enable-speech-dispatcher
-```
+Installing RHVoice therefore does nothing for voice *selection*. It does affect
+playback: with no matching voice the utterance keeps its `lang` and Chrome hands
+it to the system synthesizer, which speaks Ukrainian in whatever single default
+voice it has. So the audio is not silent — it is one voice for every persona,
+which is why `resolveVoice` reports `sharedVoiceFallback` when a locale has no
+voices at all and lets prosody do the separating.
 
-Firefox reads `speech-dispatcher` without a flag.
+Firefox reads `speech-dispatcher` and does list its voices.
 
 Once the flag is in place, the modules installed on the machine decide what is
 available.

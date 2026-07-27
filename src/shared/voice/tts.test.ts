@@ -172,7 +172,9 @@ describe('resolveVoice', () => {
     const selection = resolveVoice([voice('Microsoft David - English (US)', 'en-US')], 'ua', 'male')
 
     expect(selection.voice).toBeNull()
-    expect(selection.sharedVoiceFallback).toBe(false)
+    // The engine may still speak it in some default voice, identical for every
+    // persona, so prosody has to do the separating.
+    expect(selection.sharedVoiceFallback).toBe(true)
   })
 
   it('flags the shared-voice fallback when a language ships exactly one voice', () => {
@@ -303,10 +305,16 @@ describe('resolveVoice across real browser voice lists', () => {
 
   it('reports no voice at all for a locale Chrome cannot speak', () => {
     // Chrome's built-in set covers Russian and Polish but not Ukrainian.
-    const selection = resolveVoice(CHROME_BUILTIN_VOICES, 'ua', 'female')
+    const male = resolveVoice(CHROME_BUILTIN_VOICES, 'ua', 'male')
+    const female = resolveVoice(CHROME_BUILTIN_VOICES, 'ua', 'female')
 
-    expect(selection.voice).toBeNull()
-    expect(selection.sharedVoiceFallback).toBe(false)
+    expect(male.voice).toBeNull()
+    expect(female.voice).toBeNull()
+    // Chrome hands the utterance to the system synthesizer anyway, which uses
+    // one voice for everyone — without a prosody nudge every persona would
+    // sound the same.
+    expect(male.sharedVoiceFallback).toBe(true)
+    expect(female.sharedVoiceFallback).toBe(true)
   })
 
   it('gives the same answer however the browser orders its list', () => {
@@ -429,6 +437,24 @@ describe('speak', () => {
 
     expect(synth.spoken[0].pitch).toBeCloseTo(0.88)
     expect(Math.abs(1 - synth.spoken[0].pitch)).toBeLessThanOrEqual(0.15)
+  })
+
+  it('separates the personas by pitch when the locale has no voice of its own', async () => {
+    // Chrome on Linux: no Ukrainian voice in the list, but the system
+    // synthesizer speaks the utterance anyway — in one voice, for everyone.
+    const synth = stubSpeechSynthesis([voice('Google US English', 'en-US', false)])
+
+    speak('Розкажіть про себе', 'ua', 'male')
+    await vi.waitFor(() => expect(synth.spoken).toHaveLength(1))
+    const malePitch = synth.spoken[0].pitch
+
+    stopSpeaking()
+    speak('Розкажіть про себе', 'ua', 'female')
+    await vi.waitFor(() => expect(synth.spoken).toHaveLength(1))
+
+    expect(synth.spoken[0].voice).toBeNull()
+    expect(malePitch).toBeLessThan(1)
+    expect(synth.spoken[0].pitch).toBeGreaterThan(1)
   })
 
   it('does not reach the synthesizer when stopSpeaking() lands while voices are still loading', async () => {
