@@ -1,5 +1,47 @@
 import { describe, expect, it } from 'vitest'
-import { PIPELINE_QUESTION_SETS, QUESTION_BANKS, RECRUITER_STAGE1_QUESTIONS } from './questionBank'
+import {
+  JUNIOR_FUNDAMENTALS_QUESTIONS,
+  JUNIOR_TECH_QUESTIONS,
+  MOTIVATION_QUESTIONS,
+  PIPELINE_QUESTION_SETS,
+  QUESTION_BANKS,
+  RECRUITER_STAGE1_QUESTIONS,
+  SENIOR_DEVOPS_QUESTIONS,
+} from './questionBank'
+
+describe('Marcus inherits the junior technical theory', () => {
+  const marcus = QUESTION_BANKS['senior-devops']
+
+  it('holds his own bank plus every junior technical question', () => {
+    expect(marcus).toHaveLength(
+      SENIOR_DEVOPS_QUESTIONS.length + JUNIOR_FUNDAMENTALS_QUESTIONS.length + JUNIOR_TECH_QUESTIONS.length,
+    )
+    for (const question of [...JUNIOR_FUNDAMENTALS_QUESTIONS, ...JUNIOR_TECH_QUESTIONS]) {
+      expect(marcus).toContain(question)
+    }
+  })
+
+  it('takes no motivation questions — only the technical ones moved', () => {
+    expect(marcus.some((q) => q.category === 'motivation')).toBe(false)
+    for (const question of MOTIVATION_QUESTIONS) {
+      expect(marcus).not.toContain(question)
+    }
+  })
+
+  it('has no duplicate ids after the merge', () => {
+    const ids = marcus.map((q) => q.id)
+    expect(new Set(ids).size).toBe(ids.length)
+  })
+
+  it('leaves the motivation bank attached to nobody', () => {
+    // It is not technical, so it did not move to Marcus; and it cannot go back
+    // to Emma, whose script is fixed. Wiring it anywhere is a deliberate act.
+    const everyPool = Object.values(QUESTION_BANKS).flat()
+    for (const question of MOTIVATION_QUESTIONS) {
+      expect(everyPool).not.toContain(question)
+    }
+  })
+})
 
 describe('Emma (recruiter) asks her screening script and nothing else', () => {
   /** The agreed script, in order. Changing the recruiter's questions means changing this list. */

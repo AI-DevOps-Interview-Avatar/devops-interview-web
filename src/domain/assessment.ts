@@ -1,5 +1,34 @@
-import type { BankQuestion } from './models/questionBank'
+import type { BankQuestion, QuestionLevel } from './models/questionBank'
 import type { ChatMessage } from '../store/interviewSlice'
+
+/** Junior → senior. Order matters: ties in `sessionLevel` resolve upward. */
+const LEVEL_ORDER: QuestionLevel[] = ['junior', 'middle', 'senior']
+
+/**
+ * The level a finished session is recorded under in history.
+ *
+ * Reading it off the first question was accurate while every pool held a single
+ * level. Marcus's pool now mixes junior theory with his own middle-level
+ * questions, so the first draw would label the whole session at random. Takes
+ * the level that occurs most instead, and the more senior one on a tie.
+ */
+export function sessionLevel(questions: BankQuestion[]): QuestionLevel {
+  const counts = new Map<QuestionLevel, number>()
+  for (const question of questions) {
+    counts.set(question.level, (counts.get(question.level) ?? 0) + 1)
+  }
+
+  let best: QuestionLevel = 'junior'
+  let bestCount = 0
+  for (const level of LEVEL_ORDER) {
+    const count = counts.get(level) ?? 0
+    if (count > 0 && count >= bestCount) {
+      best = level
+      bestCount = count
+    }
+  }
+  return best
+}
 
 export interface SessionAssessment {
   askedCount: number

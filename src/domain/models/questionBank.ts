@@ -20,18 +20,14 @@ export interface BankQuestion {
 }
 
 // ---------------------------------------------------------------------------
-// NOT WIRED TO ANY PERSONA.
-//
-// The three RECRUITER_* arrays below used to make up Emma's practice pool. They
-// are junior DevOps theory — Linux internals, networking, Git — which the
-// recruiter does not ask: her script is RECRUITER_STAGE1_QUESTIONS and nothing
-// else. The content is kept because it is worth reusing, but until it is
-// deliberately assigned to a persona it reaches no one. Do not re-attach it to
-// `recruiter`.
+// Junior technical theory. This used to be Emma's practice pool; it is now
+// Marcus's, because asking a recruiter about inodes never made sense. The
+// recruiter's questions are RECRUITER_STAGE1_QUESTIONS and nothing else — do
+// not re-attach anything here to `recruiter`.
 // ---------------------------------------------------------------------------
 
 // Junior: General + Linux fundamentals.
-export const RECRUITER_QUESTIONS: BankQuestion[] = [
+export const JUNIOR_FUNDAMENTALS_QUESTIONS: BankQuestion[] = [
   { id: 'j-general-1', category: 'general', level: 'junior', ua: 'Що таке DevOps?', en: 'What is DevOps?' },
   {
     id: 'j-general-2',
@@ -175,12 +171,9 @@ export const RECRUITER_QUESTIONS: BankQuestion[] = [
   },
 ]
 
-// Recruiter's remaining Junior-level technical bank (basic-knowledge check):
-// Networks, Clouds, Automation, Security, Virtualization, CI/CD,
-// Development, Monitoring/Logging, Practical. Recruiter's role per spec is
-// "soft skills, motivation, and basic knowledge" — so all Junior technical
-// content lives here, not under HR.
-export const RECRUITER_JUNIOR_EXTRA_QUESTIONS: BankQuestion[] = [
+// The rest of the Junior technical material: Networks, Clouds, Automation,
+// Security, Virtualization, CI/CD, Development, Monitoring/Logging, Practical.
+export const JUNIOR_TECH_QUESTIONS: BankQuestion[] = [
   {
     id: 'j-networks-28',
     category: 'networks',
@@ -456,10 +449,16 @@ export const RECRUITER_JUNIOR_EXTRA_QUESTIONS: BankQuestion[] = [
   },
 ]
 
-// Recruiter's soft-skills/motivation bank — first-round screening questions,
-// not technical at all. Matches Recruiter's role: "soft skills, motivation,
-// and basic knowledge".
-export const RECRUITER_MOTIVATION_QUESTIONS: BankQuestion[] = [
+/**
+ * Soft-skills / motivation questions. NOT WIRED TO ANY PERSONA.
+ *
+ * These stayed behind when the technical material moved to Marcus: they are not
+ * technical, so they were not part of that move, and they cannot go back to the
+ * recruiter either — her script is fixed and already covers motivation. Kept
+ * because the content is worth reusing, but until it is deliberately assigned
+ * it reaches no one.
+ */
+export const MOTIVATION_QUESTIONS: BankQuestion[] = [
   {
     id: 'r-motivation-1',
     category: 'motivation',
@@ -2040,6 +2039,10 @@ export const PIPELINE_QUESTION_SETS: Record<string, BankQuestion[]> = {
 export const QUESTION_BANKS: Record<string, BankQuestion[]> = {
   recruiter: RECRUITER_STAGE1_QUESTIONS,
   hr: HR_QUESTIONS,
-  'senior-devops': SENIOR_DEVOPS_QUESTIONS,
+  // Marcus inherits the junior technical theory that used to sit in the
+  // recruiter's pool — 72 questions across Linux, networking, CI/CD, clouds and
+  // monitoring. His own bank is middle-level, so the pool now spans both: the
+  // easier questions are a warm-up, not a downgrade of the persona.
+  'senior-devops': [...SENIOR_DEVOPS_QUESTIONS, ...JUNIOR_FUNDAMENTALS_QUESTIONS, ...JUNIOR_TECH_QUESTIONS],
   cto: CTO_QUESTIONS,
 }
