@@ -223,6 +223,20 @@ const BROWSER_VOICES = {
   ],
 }
 
+/**
+ * Chrome's own voice set on Linux, where it ignores speech-dispatcher unless
+ * launched with `--enable-speech-dispatcher`. Trimmed to the languages we care
+ * about — note there is no Ukrainian in it at all, which is what the
+ * unspeakable-locale warning is for.
+ */
+const CHROME_BUILTIN_VOICES = [
+  voice('Google US English', 'en-US', false),
+  voice('Google UK English Female', 'en-GB', false),
+  voice('Google UK English Male', 'en-GB', false),
+  voice('Google polski', 'pl-PL', false),
+  voice('Google русский', 'ru-RU', false),
+]
+
 /** Which voices are actually male or female, per engine, so a wrong pick is caught. */
 const MALE_VOICES = new Set([
   'Microsoft Ostap - Ukrainian (Ukraine)',
@@ -276,6 +290,24 @@ describe('resolveVoice across real browser voice lists', () => {
       }
     })
   }
+
+  it('does not read "Female" as a match for the male persona', () => {
+    // 'female' contains 'male', so a substring search put Marcus on
+    // "Google UK English Female" — the first voice that technically matched.
+    const male = resolveVoice(CHROME_BUILTIN_VOICES, 'en', 'male')
+    const female = resolveVoice(CHROME_BUILTIN_VOICES, 'en', 'female')
+
+    expect(male.voice?.name).toBe('Google UK English Male')
+    expect(female.voice?.name).toBe('Google UK English Female')
+  })
+
+  it('reports no voice at all for a locale Chrome cannot speak', () => {
+    // Chrome's built-in set covers Russian and Polish but not Ukrainian.
+    const selection = resolveVoice(CHROME_BUILTIN_VOICES, 'ua', 'female')
+
+    expect(selection.voice).toBeNull()
+    expect(selection.sharedVoiceFallback).toBe(false)
+  })
 
   it('gives the same answer however the browser orders its list', () => {
     const reversed = [...BROWSER_VOICES.chrome].reverse()

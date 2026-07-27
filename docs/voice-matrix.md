@@ -55,6 +55,11 @@ Available: `Microsoft Ostap - Ukrainian (Ukraine)`, `Microsoft Polina - Ukrainia
 (Ukraine)`, `Google українська`, `Microsoft David - English (United States)`,
 `Microsoft Zira - English (United States)`, `Google US English`.
 
+Chrome also carries voices named `Google UK English Female` and `Google UK
+English Male`. They are the reason the gender match is anchored to word
+boundaries: "female" contains "male", and a substring search put the male
+persona on the female voice.
+
 | Persona | UA | EN |
 |---|---|---|
 | Emma (female) | Microsoft Polina | Microsoft Zira |
@@ -90,10 +95,26 @@ entirely.
 
 ### Linux (any browser)
 
-Linux ships no speech voices of its own. Chrome, Firefox and Edge all go through
-`speech-dispatcher`, so the browser is irrelevant — what matters is which
-synthesizer modules are installed and enabled. A machine with none exposes an
-empty voice list and the session screen shows the unspeakable-locale warning.
+Linux ships no speech voices of its own, so the browser has to get them from
+somewhere — and the two sources behave very differently.
+
+**Chrome ignores `speech-dispatcher` by default.** It reports its own set of
+network-backed Google voices instead, about nineteen of them. That set covers
+Russian and Polish but **not Ukrainian**, so a stock Chrome on Linux cannot
+speak a Ukrainian interview at all: the session screen shows the
+unspeakable-locale warning, and any text handed to the engine is read by the
+English default with an obvious accent. Installing RHVoice changes nothing on
+its own — Chrome never asks. The local voices appear only when it is started
+with the flag:
+
+```bash
+google-chrome --enable-speech-dispatcher
+```
+
+Firefox reads `speech-dispatcher` without a flag.
+
+Once the flag is in place, the modules installed on the machine decide what is
+available.
 
 The usual setup for Ukrainian is RHVoice, which speaks it far better than
 espeak-ng:
