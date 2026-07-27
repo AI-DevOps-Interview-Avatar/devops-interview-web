@@ -1,6 +1,12 @@
 import { configureStore } from '@reduxjs/toolkit'
 import interviewReducer from './interviewSlice'
 import pipelineReducer, { savePipelineState } from './pipelineSlice'
+import { pruneExpiredHistory } from './historySlice'
+
+// Retention is enforced at boot, not on the History page: data has to expire
+// on a device even for someone who never opens that screen again. Pipeline
+// progress expires inside its own loader, which has already run by this line.
+pruneExpiredHistory()
 
 export const store = configureStore({
   reducer: {

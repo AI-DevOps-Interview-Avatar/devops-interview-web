@@ -93,6 +93,12 @@
   "language": {
     "label": "Language"
   },
+  "privacy": {
+    "note": "Everything you type here stays in this browser. Answers, interview history and pipeline progress are saved on this device only and are never sent to a server. Records older than {{days}} days are deleted automatically.",
+    "dismiss": "Got it",
+    "clear": "Clear my data",
+    "clearConfirm": "Delete all interview history and pipeline progress saved in this browser? This cannot be undone."
+  },
   "nav": {
     "back": "Back",
     "home": "Home"
