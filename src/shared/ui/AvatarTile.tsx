@@ -1,6 +1,7 @@
 import { useRive, Layout, Fit, Alignment } from '@rive-app/react-canvas'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import type { InterviewerProfile } from '../../domain/models/InterviewerProfile'
+import { getCachedRiveBuffer, loadRiveBuffer, riveAssetUrl } from './riveBufferCache'
 
 const DEFAULT_STATE_MACHINE = 'State Machine 1'
 const SPEAK_INPUT = 'speak'
@@ -18,13 +19,95 @@ interface AvatarTileProps {
 }
 
 export function AvatarTile({ interviewer, isSpeaking, size = 320 }: AvatarTileProps) {
+  const src = riveAssetUrl(interviewer.riveFile)
+  // Keyed on the asset so a persona swap remounts the loader: its cache lookup
+  // then runs fresh, which is what keeps a cached avatar from ever flashing
+  // its placeholder.
+  return <AvatarCanvas key={src} src={src} interviewer={interviewer} isSpeaking={isSpeaking} size={size} />
+}
+
+function AvatarCanvas({
+  src,
+  interviewer,
+  isSpeaking,
+  size,
+}: Required<AvatarTileProps> & { src: string }) {
+  // A cache hit resolves during the very first render, so a return trip to Home
+  // paints the finished avatar immediately instead of a placeholder that swaps.
+  const [buffer, setBuffer] = useState(() => getCachedRiveBuffer(src))
+
+  useEffect(() => {
+    if (buffer) return
+    let cancelled = false
+    loadRiveBuffer(src)
+      .then((loaded) => {
+        if (!cancelled) setBuffer(loaded)
+      })
+      .catch(() => {
+        // Keep the placeholder rather than an empty hole in the layout.
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [src, buffer])
+
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        overflow: 'hidden',
+        border: `3px solid ${interviewer.color}`,
+        background: 'linear-gradient(180deg, #2a2b33, #1c1d23)',
+        position: 'relative',
+      }}
+    >
+      {buffer ? (
+        <RiveStage buffer={buffer} interviewer={interviewer} isSpeaking={isSpeaking} />
+      ) : (
+        // Overlaid on the same circle rather than laid out beside it — the
+        // placeholder occupies the finished avatar's box exactly, so nothing
+        // reflows when the canvas takes over.
+        <span
+          aria-hidden
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'grid',
+            placeItems: 'center',
+            fontSize: size * 0.34,
+            fontWeight: 700,
+            color: interviewer.color,
+            opacity: 0.35,
+          }}
+        >
+          {interviewer.voiceName.charAt(0)}
+        </span>
+      )}
+    </div>
+  )
+}
+
+function RiveStage({
+  buffer,
+  interviewer,
+  isSpeaking,
+}: {
+  buffer: ArrayBuffer
+  interviewer: InterviewerProfile
+  isSpeaking: boolean
+}) {
   const stateMachine = interviewer.stateMachine ?? DEFAULT_STATE_MACHINE
   const scale = interviewer.avatarScale ?? 1
   // Cover (дефолт) заповнює коло без полосок; Contain вписує персонажа цілком
   // (оригінальний, менший вигляд наших власних ригів, напр. Marcus).
   const fit = interviewer.fit === 'contain' ? Fit.Contain : Fit.Cover
   const { rive, RiveComponent } = useRive({
-    src: `${import.meta.env.BASE_URL}avatars/${interviewer.riveFile}`,
+    // A copy per instance: the cached buffer is shared by every tile showing
+    // this persona, and handing the same one to several Rive instances would
+    // make them contend for it.
+    buffer: buffer.slice(0),
     stateMachines: stateMachine,
     autoplay: true,
     layout: new Layout({ fit, alignment: Alignment.Center }),
@@ -40,25 +123,14 @@ export function AvatarTile({ interviewer, isSpeaking, size = 320 }: AvatarTilePr
   }, [rive, isSpeaking, stateMachine])
 
   return (
-    <div
+    <RiveComponent
       style={{
-        width: size,
-        height: size,
-        borderRadius: '50%',
-        overflow: 'hidden',
-        border: `3px solid ${interviewer.color}`,
-        background: 'linear-gradient(180deg, #2a2b33, #1c1d23)',
+        width: '100%',
+        height: '100%',
+        // Деякі риги мають зайвий відступ у артборді — доводимо персонажа
+        // до потрібного розміру в колі (контейнер обрізає overflow).
+        transform: scale === 1 ? undefined : `scale(${scale})`,
       }}
-    >
-      <RiveComponent
-        style={{
-          width: '100%',
-          height: '100%',
-          // Деякі риги мають зайвий відступ у артборді — доводимо персонажа
-          // до потрібного розміру в колі (контейнер обрізає overflow).
-          transform: scale === 1 ? undefined : `scale(${scale})`,
-        }}
-      />
-    </div>
+    />
   )
 }

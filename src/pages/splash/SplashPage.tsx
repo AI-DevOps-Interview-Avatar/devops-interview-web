@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { LanguageSwitcher } from '../../shared/ui/LanguageSwitcher'
+import { INTERVIEWERS } from '../../domain/models/InterviewerProfile'
+import { prefetchRiveBuffers, riveAssetUrl } from '../../shared/ui/riveBufferCache'
 
 /**
  * Заглушка bootstrap-екрану моделі. Реальне завантаження .task бандла
@@ -11,6 +13,13 @@ export default function SplashPage() {
   const [progress, setProgress] = useState(0)
   const navigate = useNavigate()
   const { t } = useTranslation()
+
+  // The bootstrap bar runs for about a second and a half — enough to pull every
+  // avatar into the buffer cache, so the selection screen behind it paints
+  // finished faces instead of placeholders.
+  useEffect(() => {
+    prefetchRiveBuffers(INTERVIEWERS.map((profile) => riveAssetUrl(profile.riveFile)))
+  }, [])
 
   useEffect(() => {
     const interval = setInterval(() => {

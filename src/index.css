@@ -360,3 +360,25 @@ button {
     width: 320px;
   }
 }
+
+/* Job Search Resources: name and description as two grid columns so every card
+   starts its description at the same x-position, however long the name is.
+   A flex row with min-width let the longest UA name shift its own row. */
+.resource-row {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #383944;
+  background: #2a2b33;
+  overflow-wrap: anywhere;
+}
+
+/* Phones: no room for two columns without hyphenating names to shreds. */
+@media (max-width: 479px) {
+  .resource-row {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+}
