@@ -19,7 +19,18 @@ export interface BankQuestion {
   profileField?: CandidateProfileField
 }
 
-// Recruiter (Easy) — Junior: General + Linux fundamentals.
+// ---------------------------------------------------------------------------
+// NOT WIRED TO ANY PERSONA.
+//
+// The three RECRUITER_* arrays below used to make up Emma's practice pool. They
+// are junior DevOps theory — Linux internals, networking, Git — which the
+// recruiter does not ask: her script is RECRUITER_STAGE1_QUESTIONS and nothing
+// else. The content is kept because it is worth reusing, but until it is
+// deliberately assigned to a persona it reaches no one. Do not re-attach it to
+// `recruiter`.
+// ---------------------------------------------------------------------------
+
+// Junior: General + Linux fundamentals.
 export const RECRUITER_QUESTIONS: BankQuestion[] = [
   { id: 'j-general-1', category: 'general', level: 'junior', ua: 'Що таке DevOps?', en: 'What is DevOps?' },
   {
@@ -1786,13 +1797,6 @@ export const CTO_QUESTIONS: BankQuestion[] = [
   },
 ]
 
-export const QUESTION_BANKS: Record<string, BankQuestion[]> = {
-  recruiter: [...RECRUITER_QUESTIONS, ...RECRUITER_JUNIOR_EXTRA_QUESTIONS, ...RECRUITER_MOTIVATION_QUESTIONS],
-  hr: HR_QUESTIONS,
-  'senior-devops': SENIOR_DEVOPS_QUESTIONS,
-  cto: CTO_QUESTIONS,
-}
-
 // ---------------------------------------------------------------------------
 // 5-stage hiring pipeline — fixed, non-randomized question scripts.
 // Unlike QUESTION_BANKS (shuffled practice pool), each pipeline stage asks
@@ -1875,6 +1879,62 @@ export const RECRUITER_STAGE1_QUESTIONS: BankQuestion[] = [
     level: 'junior',
     ua: 'Як ви дієте, якщо пріоритети тасок різко змінюються посеред спринту?',
     en: 'What do you do when task priorities suddenly change mid-sprint?',
+  },
+  {
+    id: 'stage1-team-size',
+    category: 'experience',
+    level: 'junior',
+    ua: 'Який розмір команди та яка ваша роль на поточному чи останньому проекті? Це був Solo DevOps чи робота в команді з іншими SRE/DevOps — і як ви взаємодіяли з розробниками?',
+    en: 'What is the team size and your role in your current or last project? Was it solo DevOps, or a team with other SRE/DevOps engineers — and how did you interact with the developers?',
+  },
+  {
+    id: 'stage1-cloud-platforms',
+    category: 'clouds',
+    level: 'junior',
+    ua: 'З якими хмарами ви працювали найбільше — AWS, GCP, Azure, Hetzner? З якими сервісами AWS маєте найбільший досвід: EKS, EC2, S3, RDS, IAM?',
+    en: 'Which clouds have you worked with the most — AWS, GCP, Azure, Hetzner? Which AWS services do you have the most experience with: EKS, EC2, S3, RDS, IAM?',
+  },
+  {
+    id: 'stage1-containers',
+    category: 'virtualization',
+    level: 'junior',
+    ua: 'Наскільки глибокий у вас досвід із Docker і Kubernetes? Чи доводилося розгортати кластери з нуля, чи працювали з керованими — EKS, GKE?',
+    en: 'How deep is your experience with Docker and Kubernetes? Have you deployed clusters from scratch, or worked with managed ones such as EKS or GKE?',
+  },
+  {
+    id: 'stage1-cicd-tools',
+    category: 'ci-cd',
+    level: 'junior',
+    ua: 'Які інструменти CI/CD ви використовували — GitHub Actions, GitLab CI, ArgoCD, Jenkins? Чи будували пайплайни з нуля?',
+    en: 'Which CI/CD tools have you used — GitHub Actions, GitLab CI, ArgoCD, Jenkins? Have you built pipelines from scratch?',
+  },
+  {
+    id: 'stage1-observability',
+    category: 'monitoring',
+    level: 'junior',
+    ua: 'Чим ви моніторили системи — Prometheus, Grafana, Datadog, ELK/EFK?',
+    en: 'What have you used to monitor your systems — Prometheus, Grafana, Datadog, ELK/EFK?',
+  },
+  {
+    id: 'stage1-scripting',
+    category: 'automation',
+    level: 'junior',
+    ua: 'На яких мовах ви пишете автоматизацію — Bash, Python, Go?',
+    en: 'Which languages do you write automation in — Bash, Python, Go?',
+  },
+  {
+    id: 'stage1-devsecops',
+    category: 'security',
+    level: 'junior',
+    ua: 'Чи маєте досвід із практиками безпеки або комплаєнсом (DevSecOps): робота з секретами (Vault, SOPS), сканування образів, ролі IAM?',
+    en: 'Have you had experience with security best practices or compliance (DevSecOps): handling secrets (Vault, SOPS), image scanning, IAM roles?',
+  },
+  {
+    id: 'stage1-english-level',
+    category: 'english',
+    level: 'junior',
+    ua: 'Який у вас рівень англійської?',
+    en: 'What is your English level?',
   },
 ]
 
@@ -1962,4 +2022,24 @@ export const PIPELINE_QUESTION_SETS: Record<string, BankQuestion[]> = {
   'senior-devops': MARCUS_STAGE2_BLITZ_QUESTIONS,
   cto: STAGE3_TASKS,
   hr: OLIVIA_STAGE4_QUESTIONS,
+}
+
+/**
+ * Practice pools — shuffled, then trimmed to MAX_QUESTIONS per session.
+ *
+ * Emma is the one persona whose pool is not a pool at all: the recruiter asks
+ * exactly the screening script in `RECRUITER_STAGE1_QUESTIONS` and nothing
+ * else, in practice as much as in the pipeline. Her old bank mixed in deep
+ * Linux/networking material (inodes, swappiness, the boot sequence), which
+ * belongs to Marcus's stage and contradicted both her profile description and
+ * her greeting. Anything asked of a candidate by the recruiter must be added to
+ * that script — there is no second source.
+ *
+ * Declared after the pipeline scripts because it now reuses one of them.
+ */
+export const QUESTION_BANKS: Record<string, BankQuestion[]> = {
+  recruiter: RECRUITER_STAGE1_QUESTIONS,
+  hr: HR_QUESTIONS,
+  'senior-devops': SENIOR_DEVOPS_QUESTIONS,
+  cto: CTO_QUESTIONS,
 }
