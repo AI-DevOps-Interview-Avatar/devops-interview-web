@@ -71,6 +71,7 @@ function AvatarCanvas({
         // reflows when the canvas takes over.
         <span
           aria-hidden
+          className="avatar-placeholder"
           style={{
             position: 'absolute',
             inset: 0,

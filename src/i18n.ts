@@ -1,6 +1,7 @@
 import i18n from 'i18next'
 import HttpBackend from 'i18next-http-backend'
 import { initReactI18next } from 'react-i18next'
+import { syncDocumentLanguage } from './shared/lib/htmlLang'
 
 export const SUPPORTED_LANGUAGES = ['en', 'ua'] as const
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]
@@ -25,6 +26,12 @@ i18n
       escapeValue: false,
     },
   })
+
+// `<html lang>` is static markup, so it kept claiming English through an entire
+// Ukrainian session. Track the live language instead of the initial one: the
+// switcher is available on every screen.
+syncDocumentLanguage(initialLanguage)
+i18n.on('languageChanged', syncDocumentLanguage)
 
 export function setLanguage(lang: SupportedLanguage): void {
   localStorage.setItem(STORAGE_KEY, lang)

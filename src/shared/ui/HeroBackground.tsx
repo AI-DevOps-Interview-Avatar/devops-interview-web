@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { usePrefersReducedMotion } from '../lib/reducedMotion'
 
 const KEYWORDS: { label: string; top: string; left: string; rotate: number; size: number }[] = [
   { label: 'KUBERNETES', top: '6%', left: '4%', rotate: -8, size: 40 },
@@ -19,6 +20,12 @@ const PARTICLE_COUNT = 26
 
 /** Purely decorative animated background — pointer-events disabled, aria-hidden. */
 export function HeroBackground() {
+  // The stylesheet stills every animation under `prefers-reduced-motion`, but
+  // two of these decorations are positioned *by* their animation and read as
+  // debris once frozen: particles rest at zero opacity, and all five orbit
+  // labels sit on top of each other in the middle of the ring. Drop them
+  // instead — the gradient, the keywords and the ∞ mark still carry the look.
+  const reducedMotion = usePrefersReducedMotion()
   const particles = useMemo(
     () =>
       Array.from({ length: PARTICLE_COUNT }, (_, i) => ({
@@ -35,21 +42,22 @@ export function HeroBackground() {
     <div className="hero-bg" aria-hidden="true">
       <div className="hero-bg__gradient" />
       <div className="hero-bg__datastream" />
-      {particles.map((p, i) => (
-        <span
-          key={i}
-          className="hero-bg__particle"
-          style={{
-            left: p.left,
-            width: p.size,
-            height: p.size,
-            background: p.color,
-            boxShadow: `0 0 6px 1px ${p.color}`,
-            animationDelay: p.delay,
-            animationDuration: p.duration,
-          }}
-        />
-      ))}
+      {!reducedMotion &&
+        particles.map((p, i) => (
+          <span
+            key={i}
+            className="hero-bg__particle"
+            style={{
+              left: p.left,
+              width: p.size,
+              height: p.size,
+              background: p.color,
+              boxShadow: `0 0 6px 1px ${p.color}`,
+              animationDelay: p.delay,
+              animationDuration: p.duration,
+            }}
+          />
+        ))}
       {KEYWORDS.map((k) => (
         <span
           key={k.label}
@@ -61,15 +69,16 @@ export function HeroBackground() {
       ))}
       <div className="hero-infinity">
         <div className="hero-infinity__symbol">∞</div>
-        {ORBIT_LABELS.map((label, i) => (
-          <span
-            key={label}
-            className="hero-infinity__orbit-item"
-            style={{ animationDelay: `${-(i * (22 / ORBIT_LABELS.length))}s` }}
-          >
-            {label}
-          </span>
-        ))}
+        {!reducedMotion &&
+          ORBIT_LABELS.map((label, i) => (
+            <span
+              key={label}
+              className="hero-infinity__orbit-item"
+              style={{ animationDelay: `${-(i * (22 / ORBIT_LABELS.length))}s` }}
+            >
+              {label}
+            </span>
+          ))}
       </div>
     </div>
   )
