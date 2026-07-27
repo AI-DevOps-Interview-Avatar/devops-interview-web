@@ -113,13 +113,42 @@ export default function MeetSessionPage() {
 
     return () => {
       cancelled = true
+      // Pipeline stages swap the interviewer without unmounting the page, so
+      // this is the only place that releases the previous stage's audio.
       stopSpeaking()
+      listeningHandleRef.current?.abort()
+      listeningHandleRef.current = null
+      setListening(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [interviewerId])
 
+  // Single owner of every audio resource this page holds. The interview effect
+  // above only tears down on interviewer change, which left the synthesizer and
+  // an open recognition session alive across navigation — reopening a recruiter
+  // then landed on a wedged Chrome queue and a dead mic until a hard refresh.
+  useEffect(() => {
+    const releaseAudio = () => {
+      stopSpeaking()
+      listeningHandleRef.current?.abort()
+      listeningHandleRef.current = null
+    }
+    // pagehide covers the bfcache/mobile paths where beforeunload never fires.
+    window.addEventListener('beforeunload', releaseAudio)
+    window.addEventListener('pagehide', releaseAudio)
+    return () => {
+      window.removeEventListener('beforeunload', releaseAudio)
+      window.removeEventListener('pagehide', releaseAudio)
+      releaseAudio()
+    }
+  }, [])
+
   useEffect(() => {
     if (finished) {
+      // The last question is usually still being spoken when the final answer
+      // lands — without this the recruiter keeps talking over Session Summary.
+      stopSpeaking()
+      listeningHandleRef.current?.stop()
       saveToHistory()
       if (pipelineMode && pipelineStageIndex !== null && !stageCompletedRef.current) {
         stageCompletedRef.current = true
@@ -172,8 +201,16 @@ export default function MeetSessionPage() {
     sendMessage(draft)
   }
 
-  function handleHangup() {
+  /** Everything that must happen before this page goes away, whatever route triggers it. */
+  function leaveSession() {
+    stopSpeaking()
+    listeningHandleRef.current?.abort()
+    listeningHandleRef.current = null
     saveToHistory()
+  }
+
+  function handleHangup() {
+    leaveSession()
     navigate(pipelineMode ? '/pipeline' : '/interview')
   }
 
@@ -240,7 +277,7 @@ export default function MeetSessionPage() {
     <main className="meet-shell">
       <section className="meet-main">
         <LanguageSwitcher />
-        <PageNav onBeforeNavigate={saveToHistory} />
+        <PageNav onBeforeNavigate={leaveSession} />
 
         {/* Full-bleed video tile, Meet-style — no card border/padding around it. */}
         <div
