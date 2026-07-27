@@ -5,6 +5,7 @@ import { INTERVIEWERS } from '../../domain/models/InterviewerProfile'
 import { AvatarTile } from '../../shared/ui/AvatarTile'
 import { LanguageSwitcher } from '../../shared/ui/LanguageSwitcher'
 import { HeroBackground } from '../../shared/ui/HeroBackground'
+import { PrivacyNote } from '../../shared/ui/PrivacyNote'
 
 const NAV_LINKS: { to: string; icon: string; labelKey: string }[] = [
   { to: '/pipeline', icon: '🎯', labelKey: 'selection.pipelineLink' },
@@ -46,6 +47,12 @@ export default function InterviewerSelectionPage() {
             ))}
           </div>
         </header>
+
+        {/* First screen a candidate reaches, and the last one before they start
+            answering — so this is where the storage note belongs. */}
+        <div style={{ marginBottom: '1.25rem', maxWidth: 720 }}>
+          <PrivacyNote dismissible />
+        </div>
 
         <div
           style={{

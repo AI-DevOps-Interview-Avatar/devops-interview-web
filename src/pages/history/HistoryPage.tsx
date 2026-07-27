@@ -1,16 +1,31 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useDispatch } from 'react-redux'
 import { averageCompletionFor, loadHistory, type SessionRecord } from '../../store/historySlice'
+import { clearAllLocalData } from '../../store/localData'
+import { resetPipeline } from '../../store/pipelineSlice'
 import { INTERVIEWERS } from '../../domain/models/InterviewerProfile'
 import { LanguageSwitcher } from '../../shared/ui/LanguageSwitcher'
 import { PageNav } from '../../shared/ui/PageNav'
+import { PrivacyNote } from '../../shared/ui/PrivacyNote'
 
 export default function HistoryPage() {
-  const [history] = useState<SessionRecord[]>(() => loadHistory())
+  const [history, setHistory] = useState<SessionRecord[]>(() => loadHistory())
   const { t } = useTranslation()
+  const dispatch = useDispatch()
 
   const interviewerIdsWithHistory = Array.from(new Set(history.map((r) => r.interviewerId)))
+
+  const clearData = () => {
+    if (!window.confirm(t('privacy.clearConfirm'))) return
+    clearAllLocalData()
+    // Storage is only half of it — the pipeline slice is holding the same
+    // answers in memory, and the store's persist subscription would write them
+    // straight back on the next dispatch.
+    dispatch(resetPipeline())
+    setHistory([])
+  }
 
   return (
     <main
@@ -28,6 +43,9 @@ export default function HistoryPage() {
       <LanguageSwitcher />
       <PageNav />
       <h1>{t('history.title')}</h1>
+      <div style={{ margin: '1rem 0 1.25rem' }}>
+        <PrivacyNote />
+      </div>
       {history.length === 0 && <p>{t('history.empty')}</p>}
 
       {interviewerIdsWithHistory.length > 0 && (
@@ -78,9 +96,35 @@ export default function HistoryPage() {
         })}
       </div>
 
-      <Link to="/interview" style={{ color: '#c084fc', display: 'inline-block', marginTop: '1.5rem' }}>
-        {t('history.newInterview')}
-      </Link>
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '1rem',
+          marginTop: '1.5rem',
+        }}
+      >
+        <Link to="/interview" style={{ color: '#c084fc' }}>
+          {t('history.newInterview')}
+        </Link>
+        <button
+          onClick={clearData}
+          style={{
+            padding: '0.45rem 0.9rem',
+            borderRadius: 999,
+            border: '1px solid #4b2330',
+            background: 'transparent',
+            color: '#f87171',
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          {t('privacy.clear')}
+        </button>
+      </div>
     </main>
   )
 }
