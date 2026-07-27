@@ -65,13 +65,8 @@ export const JUNIOR_FUNDAMENTALS_QUESTIONS: BankQuestion[] = [
     ua: 'Навіщо потрібні файлові системи? Які існують?',
     en: 'Why are file systems needed? Which ones exist?',
   },
-  {
-    id: 'j-linux-8',
-    category: 'linux',
-    level: 'junior',
-    ua: 'У чому різниця між віртуалізацією і контейнеризацією?',
-    en: 'What is the difference between virtualization and containerization?',
-  },
+  // Virtualization vs containerization lives in JUNIOR_TECH_QUESTIONS as
+  // `j-virtualization-47`, which asks the same thing and also for the trade-offs.
   {
     id: 'j-linux-9',
     category: 'linux',
@@ -446,88 +441,6 @@ export const JUNIOR_TECH_QUESTIONS: BankQuestion[] = [
     level: 'junior',
     ua: 'Практична сесія роботи з Git (Git command line: fetch, push, pull, rebase, checkout, submodules).',
     en: 'A practical Git session (command line: fetch, push, pull, rebase, checkout, submodules).',
-  },
-]
-
-/**
- * Soft-skills / motivation questions. NOT WIRED TO ANY PERSONA.
- *
- * These stayed behind when the technical material moved to Marcus: they are not
- * technical, so they were not part of that move, and they cannot go back to the
- * recruiter either — her script is fixed and already covers motivation. Kept
- * because the content is worth reusing, but until it is deliberately assigned
- * it reaches no one.
- */
-export const MOTIVATION_QUESTIONS: BankQuestion[] = [
-  {
-    id: 'r-motivation-1',
-    category: 'motivation',
-    level: 'junior',
-    ua: 'Розкажіть трохи про себе та свій шлях у DevOps.',
-    en: 'Tell me a bit about yourself and your path into DevOps.',
-  },
-  {
-    id: 'r-motivation-2',
-    category: 'motivation',
-    level: 'junior',
-    ua: 'Чому вас цікавить саме DevOps, а не, наприклад, розробка чи класичний sysadmin?',
-    en: 'Why are you interested in DevOps specifically, rather than development or classic sysadmin work?',
-  },
-  {
-    id: 'r-motivation-3',
-    category: 'motivation',
-    level: 'junior',
-    ua: 'Що вас мотивує у роботі найбільше — які задачі приносять найбільше задоволення?',
-    en: 'What motivates you most at work — which kinds of tasks bring you the most satisfaction?',
-  },
-  {
-    id: 'r-motivation-4',
-    category: 'motivation',
-    level: 'junior',
-    ua: 'Які ваші очікування щодо заробітної плати на цій позиції?',
-    en: 'What are your salary expectations for this position?',
-  },
-  {
-    id: 'r-motivation-5',
-    category: 'motivation',
-    level: 'junior',
-    ua: 'Яке робоче середовище є для вас ідеальним (команда, темп, підтримка)?',
-    en: 'What does your ideal work environment look like (team, pace, support)?',
-  },
-  {
-    id: 'r-motivation-6',
-    category: 'motivation',
-    level: 'junior',
-    ua: 'Де ви бачите себе у професійному плані через 3-5 років?',
-    en: 'Where do you see yourself professionally in 3-5 years?',
-  },
-  {
-    id: 'r-motivation-7',
-    category: 'motivation',
-    level: 'junior',
-    ua: 'Чому ви розглядаєте зміну поточного місця роботи?',
-    en: 'Why are you considering leaving your current job?',
-  },
-  {
-    id: 'r-motivation-8',
-    category: 'motivation',
-    level: 'junior',
-    ua: 'Що ви знаєте про нашу компанію, і чому хочете працювати саме тут?',
-    en: 'What do you know about our company, and why do you want to work here specifically?',
-  },
-  {
-    id: 'r-motivation-9',
-    category: 'motivation',
-    level: 'junior',
-    ua: 'Чи готові ви до релокації або до повністю віддаленого формату роботи?',
-    en: 'Are you open to relocation, or fully remote work arrangements?',
-  },
-  {
-    id: 'r-motivation-10',
-    category: 'motivation',
-    level: 'junior',
-    ua: 'Коли ви готові розпочати роботу, якщо отримаєте пропозицію?',
-    en: 'When would you be available to start, if offered the role?',
   },
 ]
 
@@ -1802,82 +1715,33 @@ export const CTO_QUESTIONS: BankQuestion[] = [
 // an exact, ordered set matching the real recruitment process definition.
 // ---------------------------------------------------------------------------
 
-// Stage 1 — Emma (Recruiter): non-technical screening only, no deep tech questions —
-// just terminology / stack overview, organizational conditions, English check, motivation.
+/**
+ * Stage 1 — Emma (Recruiter). The complete screening script, and the only
+ * questions the recruiter ever asks: the pipeline runs it in this order and the
+ * practice pool draws from the very same array.
+ *
+ * Stack questions stay at overview depth — which clouds, which tools, how deep
+ * — never theory. Anything that needs an explanation of how something works
+ * belongs to Marcus at Stage 2.
+ *
+ * No question here may repeat another, in this script or in any other stage of
+ * the pipeline: a candidate walking the full hiring flow would hear it twice.
+ * `questionBank.test.ts` enforces that.
+ */
 export const RECRUITER_STAGE1_QUESTIONS: BankQuestion[] = [
+  {
+    id: 'stage1-about',
+    category: 'experience',
+    level: 'junior',
+    ua: 'Розкажіть трохи про себе та свій шлях у DevOps.',
+    en: 'Tell me a bit about yourself and your path into DevOps.',
+  },
   {
     id: 'stage1-last-project',
     category: 'experience',
     level: 'junior',
     ua: 'Розкажіть коротко про свій останній проект: які завдання ви там вирішували?',
     en: 'Briefly tell me about your last project: what tasks did you handle there?',
-  },
-  {
-    id: 'stage1-tech-stack',
-    category: 'experience',
-    level: 'junior',
-    ua: 'З якими хмарами та інструментами ви працювали найбільше?',
-    en: 'Which clouds and tools have you worked with the most?',
-    profileField: 'techStackOverview',
-  },
-  {
-    id: 'stage1-fop-readiness',
-    category: 'admin',
-    level: 'junior',
-    ua: 'Чи готові ви співпрацювати через ФОП (фізична особа-підприємець)?',
-    en: 'Are you ready to collaborate via a private entrepreneur (FOP) contract?',
-  },
-  {
-    id: 'stage1-military-status',
-    category: 'admin',
-    level: 'junior',
-    ua: 'Який у вас зараз статус з обліку у військкоматі? Чи є у вас бронювання?',
-    en: 'What is your current military registration status? Do you have a draft deferral (bronyuvannya)?',
-  },
-  {
-    id: 'stage1-location',
-    category: 'admin',
-    level: 'junior',
-    ua: 'Де ви зараз територіально перебуваєте?',
-    en: 'Where are you currently located?',
-    profileField: 'location',
-  },
-  {
-    id: 'stage1-salary',
-    category: 'conditions',
-    level: 'junior',
-    ua: 'Які ваші зарплатні очікування (грошова вилка, у USD "на руки")?',
-    en: 'What are your salary expectations (net range, in USD)?',
-    profileField: 'salaryExpectations',
-  },
-  {
-    id: 'stage1-notice-period',
-    category: 'conditions',
-    level: 'junior',
-    ua: 'Який у вас notice period (термін попередження про звільнення)? Як швидко ви готові вийти на роботу?',
-    en: 'What is your notice period? How soon are you able to start?',
-    profileField: 'noticePeriod',
-  },
-  {
-    id: 'stage1-english-check',
-    category: 'english',
-    level: 'junior',
-    ua: "Перейдімо на кілька хвилин на англійську: Let's switch to English for a couple of minutes. Could you please describe your daily routine as a DevOps engineer on your previous project? (English only)",
-    en: "Let's switch to English for a couple of minutes. Could you please describe your daily routine as a DevOps engineer on your previous project?",
-  },
-  {
-    id: 'stage1-motivation',
-    category: 'motivation',
-    level: 'junior',
-    ua: 'Чому ви зараз розглядаєте нові пропозиції та вирішили змінити роботу?',
-    en: 'Why are you currently considering new opportunities and decided to change jobs?',
-  },
-  {
-    id: 'stage1-prioritization',
-    category: 'behavioral',
-    level: 'junior',
-    ua: 'Як ви дієте, якщо пріоритети тасок різко змінюються посеред спринту?',
-    en: 'What do you do when task priorities suddenly change mid-sprint?',
   },
   {
     id: 'stage1-team-size',
@@ -1887,11 +1751,40 @@ export const RECRUITER_STAGE1_QUESTIONS: BankQuestion[] = [
     en: 'What is the team size and your role in your current or last project? Was it solo DevOps, or a team with other SRE/DevOps engineers — and how did you interact with the developers?',
   },
   {
-    id: 'stage1-cloud-platforms',
+    id: 'stage1-why-devops',
+    category: 'motivation',
+    level: 'junior',
+    ua: 'Чому вас цікавить саме DevOps, а не, наприклад, розробка чи класичний sysadmin?',
+    en: 'Why are you interested in DevOps specifically, rather than development or classic sysadmin work?',
+  },
+  {
+    id: 'stage1-education',
+    category: 'education',
+    level: 'junior',
+    ua: 'Де та як ви навчалися DevOps/SRE — самоосвіта, університетська база, профільні курси, менторство?',
+    en: 'Where and how did you learn DevOps/SRE — self-study, a university background, dedicated courses, mentorship?',
+  },
+  {
+    id: 'stage1-learning-sources',
+    category: 'education',
+    level: 'junior',
+    ua: 'За якими джерелами ви стежите за індустрією — блоги, спільноти, автори в X/LinkedIn, сертифікаційні гайди AWS/CNCF?',
+    en: 'Which sources do you follow the industry through — blogs, communities, authors on X/LinkedIn, AWS/CNCF certification guides?',
+  },
+  {
+    id: 'stage1-certifications',
+    category: 'education',
+    level: 'junior',
+    ua: 'Чи є у вас профільні сертифікації — AWS Certified Solutions Architect чи DevOps Engineer, CKA/CKAD, HashiCorp Terraform?',
+    en: 'Do you hold any relevant certifications — AWS Certified Solutions Architect or DevOps Engineer, CKA/CKAD, HashiCorp Terraform?',
+  },
+  {
+    id: 'stage1-tech-stack',
     category: 'clouds',
     level: 'junior',
     ua: 'З якими хмарами ви працювали найбільше — AWS, GCP, Azure, Hetzner? З якими сервісами AWS маєте найбільший досвід: EKS, EC2, S3, RDS, IAM?',
     en: 'Which clouds have you worked with the most — AWS, GCP, Azure, Hetzner? Which AWS services do you have the most experience with: EKS, EC2, S3, RDS, IAM?',
+    profileField: 'techStackOverview',
   },
   {
     id: 'stage1-containers',
@@ -1929,13 +1822,204 @@ export const RECRUITER_STAGE1_QUESTIONS: BankQuestion[] = [
     en: 'Have you had experience with security best practices or compliance (DevSecOps): handling secrets (Vault, SOPS), image scanning, IAM roles?',
   },
   {
-    id: 'stage1-english-level',
+    id: 'stage1-trackers',
+    category: 'process',
+    level: 'junior',
+    ua: 'З якими таск-трекерами ви працювали — Jira, ClickUp, Linear, Trello, GitHub Projects, Azure DevOps?',
+    en: 'Which issue trackers have you worked with — Jira, ClickUp, Linear, Trello, GitHub Projects, Azure DevOps?',
+  },
+  {
+    id: 'stage1-methodology',
+    category: 'process',
+    level: 'junior',
+    ua: 'За якими методологіями працювала ваша команда — Scrum із двотижневими спринтами, Kanban, Scrumban?',
+    en: 'Which methodologies did your team work by — Scrum with two-week sprints, Kanban, Scrumban?',
+  },
+  {
+    id: 'stage1-on-call',
+    category: 'process',
+    level: 'junior',
+    ua: 'Як у вас було організовано чергування (On-Call duty)? Чи використовували PagerDuty або Opsgenie, які були SLA на реагування при критичних інцидентах?',
+    en: 'How was on-call duty organized on your team? Did you use PagerDuty or Opsgenie, and what were the response SLAs for critical incidents?',
+  },
+  {
+    id: 'stage1-prioritization',
+    category: 'behavioral',
+    level: 'junior',
+    ua: 'Як ви дієте, якщо пріоритети тасок різко змінюються посеред спринту?',
+    en: 'What do you do when task priorities suddenly change mid-sprint?',
+  },
+  {
+    id: 'stage1-english-teams',
     category: 'english',
     level: 'junior',
-    ua: 'Який у вас рівень англійської?',
-    en: 'What is your English level?',
+    ua: 'Чи мали ви досвід роботи в англомовних або розподілених (distributed/remote) командах?',
+    en: 'Have you worked in English-speaking or distributed/remote teams?',
   },
-]
+  {
+    id: 'stage1-english-meetings',
+    category: 'english',
+    level: 'junior',
+    ua: 'Як на попередніх проєктах проходили daily-мітинги та ретроспективи англійською мовою?',
+    en: 'How did daily stand-ups and retrospectives in English work on your previous projects?',
+  },
+  {
+    id: 'stage1-english-self-assessment',
+    category: 'english',
+    level: 'junior',
+    ua: 'Як би ви оцінили свій рівень письмової та розмовної англійської для ведення технічної документації та листування в Slack?',
+    en: 'How would you rate your written and spoken English for technical documentation and Slack conversations?',
+  },
+  {
+    id: 'stage1-english-check',
+    category: 'english',
+    level: 'junior',
+    ua: 'Перейдімо на кілька хвилин на англійську: Let\'s switch to English for a couple of minutes. Could you please describe your daily routine as a DevOps engineer on your previous project? (English only)',
+    en: 'Let\'s switch to English for a couple of minutes. Could you please describe your daily routine as a DevOps engineer on your previous project?',
+  },
+  {
+    id: 'stage1-time-tracking',
+    category: 'compliance',
+    level: 'junior',
+    ua: 'Чи готові ви до встановлення софту для моніторингу робочого часу — наприклад Hubstaff, Time Doctor, Yaware?',
+    en: 'Are you comfortable installing work-time monitoring software such as Hubstaff, Time Doctor or Yaware?',
+  },
+  {
+    id: 'stage1-background-check',
+    category: 'compliance',
+    level: 'junior',
+    ua: 'Чи готові ви проходити процедуру Background Check або Security Clearance — перевірку рекомендацій, диплома, відсутності судимостей?',
+    en: 'Are you prepared to go through a background check or security clearance — references, diploma, criminal record?',
+  },
+  {
+    id: 'stage1-nda-compliance',
+    category: 'compliance',
+    level: 'junior',
+    ua: 'Чи був у вас досвід роботи з NDA та суворими правилами безпеки — SOC 2, ISO 27001, GDPR?',
+    en: 'Have you worked under an NDA and strict security rules — SOC 2, ISO 27001, GDPR?',
+  },
+  {
+    id: 'stage1-fop-readiness',
+    category: 'admin',
+    level: 'junior',
+    ua: 'Чи готові ви співпрацювати через ФОП (фізична особа-підприємець)?',
+    en: 'Are you ready to collaborate via a private entrepreneur (FOP) contract?',
+  },
+  {
+    id: 'stage1-military-status',
+    category: 'admin',
+    level: 'junior',
+    ua: 'Який у вас зараз статус з обліку у військкоматі? Чи є у вас бронювання, чи потрібне воно від компанії?',
+    en: 'What is your current military registration status? Do you have a draft deferral, or would you need the company to arrange one?',
+  },
+  {
+    id: 'stage1-veteran-status',
+    category: 'admin',
+    level: 'junior',
+    ua: 'Чи є ви ветераном війни або учасником бойових дій (УБД)? Це важливо для соціальних програм і пільг компанії.',
+    en: 'Are you a war veteran or a combatant (UBD status)? This matters for the company\'s social programmes and benefits.',
+  },
+  {
+    id: 'stage1-location',
+    category: 'admin',
+    level: 'junior',
+    ua: 'Де ви зараз територіально перебуваєте?',
+    en: 'Where are you currently located?',
+    profileField: 'location',
+  },
+  {
+    id: 'stage1-relocation',
+    category: 'conditions',
+    level: 'junior',
+    ua: 'Чи готові ви до релокації або до повністю віддаленого формату роботи?',
+    en: 'Are you open to relocation, or to a fully remote arrangement?',
+  },
+  {
+    id: 'stage1-business-trips',
+    category: 'admin',
+    level: 'junior',
+    ua: 'Чи є у вас можливість виїжджати у закордонні відрядження за потреби проєкту — onsite-зустрічі, конференції, головний офіс?',
+    en: 'Are you able to travel abroad if the project requires it — onsite meetings, conferences, the head office?',
+  },
+  {
+    id: 'stage1-salary',
+    category: 'conditions',
+    level: 'junior',
+    ua: 'Які ваші зарплатні очікування (грошова вилка, у USD «на руки»)?',
+    en: 'What are your salary expectations (net range, in USD)?',
+    profileField: 'salaryExpectations',
+  },
+  {
+    id: 'stage1-notice-period',
+    category: 'conditions',
+    level: 'junior',
+    ua: 'Який у вас notice period (термін попередження про звільнення)? Як швидко ви готові вийти на роботу?',
+    en: 'What is your notice period? How soon are you able to start?',
+    profileField: 'noticePeriod',
+  },
+  {
+    id: 'stage1-motivation',
+    category: 'motivation',
+    level: 'junior',
+    ua: 'Чому ви зараз розглядаєте нові пропозиції та вирішили змінити роботу?',
+    en: 'Why are you currently considering new opportunities and decided to change jobs?',
+  },
+  {
+    id: 'stage1-drivers',
+    category: 'motivation',
+    level: 'junior',
+    ua: 'Що вас мотивує у роботі найбільше — які задачі приносять найбільше задоволення?',
+    en: 'What motivates you most at work — which kinds of tasks bring you the most satisfaction?',
+  },
+  {
+    id: 'stage1-ideal-environment',
+    category: 'motivation',
+    level: 'junior',
+    ua: 'Яке робоче середовище є для вас ідеальним — команда, темп, підтримка?',
+    en: 'What does your ideal work environment look like — team, pace, support?',
+  },
+  {
+    id: 'stage1-ideal-project',
+    category: 'motivation',
+    level: 'junior',
+    ua: 'Який проєкт чи продукт був би для вас ідеальним — стартап із можливістю будувати інфраструктуру з нуля чи стабільний enterprise із високими вимогами до High Availability?',
+    en: 'What project or product would be ideal for you — a startup where you build the infrastructure from scratch, or a stable enterprise with demanding high-availability requirements?',
+  },
+  {
+    id: 'stage1-skills-to-grow',
+    category: 'motivation',
+    level: 'junior',
+    ua: 'Які саме навички ви хотіли б реалізувати або прокачати в новій команді — наприклад GitOps з ArgoCD, serverless-архітектури, LLM-інфраструктура, ріст до Tech Lead чи Architect?',
+    en: 'Which skills would you like to apply or grow in a new team — GitOps with ArgoCD, serverless architectures, LLM infrastructure, growing into a Tech Lead or Architect role?',
+  },
+  {
+    id: 'stage1-five-years',
+    category: 'motivation',
+    level: 'junior',
+    ua: 'Де ви бачите себе у професійному плані через 3-5 років?',
+    en: 'Where do you see yourself professionally in 3-5 years?',
+  },
+  {
+    id: 'stage1-red-flags',
+    category: 'motivation',
+    level: 'junior',
+    ua: 'Що для вас є червоним прапорцем у новій компанії чи команді — хаотичні таски без описів, відсутність тестових середовищ, токсична комунікація?',
+    en: 'What counts as a red flag for you in a new company or team — chaotic tasks with no descriptions, no test environments, toxic communication?',
+  },
+  {
+    id: 'stage1-about-company',
+    category: 'motivation',
+    level: 'junior',
+    ua: 'Що ви знаєте про нашу компанію, і чому хочете працювати саме тут?',
+    en: 'What do you know about our company, and why do you want to work here specifically?',
+  },
+  {
+    id: 'stage1-hobby',
+    category: 'personal',
+    level: 'junior',
+    ua: 'І наостанок, поза роботою: чим ви захоплюєтеся, яке у вас хоббі?',
+    en: 'And finally, outside of work: what are you into — what are your hobbies?',
+  },]
 
 // Stage 2 — Marcus (Senior DevOps): rapid theoretical blitz.
 export const MARCUS_STAGE2_BLITZ_QUESTIONS: BankQuestion[] = [
