@@ -8,7 +8,7 @@ import { QUESTION_BANKS, PIPELINE_QUESTION_SETS } from '../../domain/models/ques
 import { STAGE3_REFERENCE_SOLUTIONS } from '../../domain/models/stage3Tasks'
 import { assessSession } from '../../domain/assessment'
 import { canEnterStage, OFFER_STAGE_INDEX, PIPELINE_STAGES } from '../../domain/pipeline'
-import { addMessage, MAX_QUESTIONS, startInterview } from '../../store/interviewSlice'
+import { addMessage, MAX_QUESTIONS, requestNextQuestion, startInterview } from '../../store/interviewSlice'
 import { completeStage } from '../../store/pipelineSlice'
 import { appendHistory } from '../../store/historySlice'
 import { shuffle } from '../../shared/lib/shuffle'
@@ -42,7 +42,9 @@ export default function MeetSessionPage() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const { t, i18n } = useTranslation()
-  const { messages, selectedQuestions, questionCount, finished } = useSelector((state: RootState) => state.interview)
+  const { messages, selectedQuestions, finished, pendingQuestionIndex } = useSelector(
+    (state: RootState) => state.interview,
+  )
   const { completedStages } = useSelector((state: RootState) => state.pipeline)
   const [draft, setDraft] = useState('')
   const [streaming, setStreaming] = useState('')
@@ -67,7 +69,8 @@ export default function MeetSessionPage() {
   const capturedTranscriptRef = useRef(false)
   const historySavedRef = useRef(false)
   const stageCompletedRef = useRef(false)
-  const askingRef = useRef(false)
+  /** Language the interview is currently spoken in; null until the first render settles it. */
+  const spokenLangRef = useRef<'en' | 'ua' | null>(null)
 
   const parsedStageIndex = params.stageIndex !== undefined ? Number(params.stageIndex) : NaN
   const pipelineMode = !Number.isNaN(parsedStageIndex)
@@ -92,8 +95,8 @@ export default function MeetSessionPage() {
     if (!interviewerId) return
     if (pipelineMode && (pipelineStageIndex === null || !canEnterStage(completedStages, pipelineStageIndex))) return
     // Guards against React StrictMode's dev-only double-invoke of this effect
-    // (mount → cleanup → mount), which would otherwise fire two overlapping
-    // askNextQuestion(0, ...) calls and duplicate the first question.
+    // (mount → cleanup → mount), which would otherwise run two overlapping
+    // greetings before the first question is even requested.
     let cancelled = false
     const questions = pipelineMode
       ? (PIPELINE_QUESTION_SETS[interviewerId] ?? [])
@@ -116,7 +119,7 @@ export default function MeetSessionPage() {
         await new Promise<void>((resolve) => speak(full, lang, profile.voiceGender, resolve))
         if (cancelled) return
       }
-      askNextQuestion(0, questions)
+      dispatch(requestNextQuestion())
     }
     run()
 
@@ -182,31 +185,74 @@ export default function MeetSessionPage() {
     })
   }
 
-  async function askNextQuestion(questionIndex: number, questions = selectedQuestions) {
-    const question = questions[questionIndex]
+  // Produces whichever question the reducer asked for. Keyed on `lang` as well,
+  // so switching language mid-generation restarts this run: the half-streamed
+  // sentence is abandoned and the question is asked again in the new language,
+  // instead of the recruiter finishing the old one several messages later.
+  useEffect(() => {
+    if (pendingQuestionIndex === null || !interviewer) return
+    const questionIndex = pendingQuestionIndex
+    const question = selectedQuestions[questionIndex]
     if (!question) return
-    // Synchronous ref lock (not state) so a fast double-Enter can't slip
-    // through the async gap between dispatching Q(n) and React committing
-    // the resulting questionCount — which would otherwise re-ask Q(n).
-    askingRef.current = true
-    setStreaming('')
-    const text = question[lang]
-    const full = await backendRef.current.generate(text, (token) => setStreaming((prev) => prev + token))
-    dispatch(addMessage({ author: 'interviewer', questionIndex }))
-    setStreaming('')
-    askingRef.current = false
-    if (interviewer) {
-      speak(full, lang, interviewer.voiceGender)
+    // Captured up front: narrowing from the guard above does not survive into
+    // the async closure below.
+    const { voiceGender } = interviewer
+
+    let cancelled = false
+    async function ask() {
+      // Local buffer rather than a functional setState: a restarted run then
+      // replaces the caption outright instead of appending to the leftovers of
+      // the language it just abandoned.
+      let buffer = ''
+      const full = await backendRef.current.generate(question[lang], (token) => {
+        buffer += token
+        if (!cancelled) setStreaming(buffer)
+      })
+      if (cancelled) return
+      dispatch(addMessage({ author: 'interviewer', questionIndex }))
+      setStreaming('')
+      speak(full, lang, voiceGender)
     }
-  }
+    void ask()
+
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingQuestionIndex, lang])
+
+  // Switching language re-translates the transcript on screen instantly
+  // (messages hold a question index, not text), so audio still playing in the
+  // old language now contradicts what the candidate is reading.
+  useEffect(() => {
+    if (spokenLangRef.current === null) {
+      spokenLangRef.current = lang
+      return
+    }
+    if (spokenLangRef.current === lang) return
+    spokenLangRef.current = lang
+    if (!interviewer || finished) return
+
+    stopSpeaking()
+    // A question already in flight is regenerated and spoken by the effect
+    // above — re-speaking here would talk over it.
+    if (pendingQuestionIndex !== null) return
+
+    const last = [...messages].reverse().find((m) => m.author === 'interviewer')
+    if (!last || !('questionIndex' in last)) return
+    const question = selectedQuestions[last.questionIndex]
+    if (question) speak(question[lang], lang, interviewer.voiceGender)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang])
 
   function sendMessage(text: string) {
-    if (!text.trim() || askingRef.current) return
-    dispatch(addMessage({ author: 'user', text: text.trim() }))
+    const trimmed = text.trim()
+    if (!trimmed) return
+    dispatch(addMessage({ author: 'user', text: trimmed }))
     setDraft('')
-    if (questionCount < selectedQuestions.length) {
-      askNextQuestion(questionCount)
-    }
+    // Intent only — the reducer decides which question is next, and rejects a
+    // second request while one is already open.
+    dispatch(requestNextQuestion())
   }
 
   function handleSend() {
