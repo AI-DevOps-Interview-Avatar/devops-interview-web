@@ -206,7 +206,34 @@ const BROWSER_VOICES = {
     voice('Microsoft Zira - English (United States)', 'en-US'),
   ],
   safari: [voice('Lesya', 'uk-UA'), voice('Samantha', 'en-US'), voice('Alex', 'en-US')],
+  // Linux has no system voices of its own: every browser goes through
+  // speech-dispatcher, and RHVoice is what actually speaks Ukrainian well.
+  // None of these names look like the Microsoft or Apple ones.
+  rhvoice: [
+    voice('Anatol', 'uk'),
+    voice('Marianna', 'uk'),
+    voice('Natalia', 'uk'),
+    voice('Volodymyr', 'uk'),
+    voice('Alan', 'en'),
+    voice('Bdl', 'en'),
+    voice('Clb', 'en'),
+    voice('Evgeniy-Eng', 'en'),
+    voice('Lyubov', 'en'),
+    voice('Slt', 'en'),
+  ],
 }
+
+/** Which voices are actually male or female, per engine, so a wrong pick is caught. */
+const MALE_VOICES = new Set([
+  'Microsoft Ostap - Ukrainian (Ukraine)',
+  'Microsoft David - English (United States)',
+  'Alex',
+  'Anatol',
+  'Volodymyr',
+  'Alan',
+  'Bdl',
+  'Evgeniy-Eng',
+])
 
 describe('resolveVoice across real browser voice lists', () => {
   for (const [browser, voices] of Object.entries(BROWSER_VOICES)) {
@@ -224,6 +251,21 @@ describe('resolveVoice across real browser voice lists', () => {
         } else {
           expect(male.voice?.name, `${browser}/${lang}`).not.toBe(female.voice?.name)
         }
+      }
+    })
+
+    it(`puts each persona on a voice of its own gender in ${browser}`, () => {
+      // Distinct voices are not enough: the split fallback happily hands the
+      // male persona a female voice when it does not recognise the names.
+      for (const lang of ['ua', 'en'] as const) {
+        const male = resolveVoice(voices, lang, 'male')
+        const female = resolveVoice(voices, lang, 'female')
+
+        if (male.sharedVoiceFallback) continue // one voice for the locale, prosody separates them
+        expect(MALE_VOICES.has(male.voice?.name ?? ''), `${browser}/${lang} male → ${male.voice?.name}`).toBe(true)
+        expect(MALE_VOICES.has(female.voice?.name ?? ''), `${browser}/${lang} female → ${female.voice?.name}`).toBe(
+          false,
+        )
       }
     })
 

@@ -20,14 +20,24 @@ const KEEP_ALIVE_MS = 9000
 // reliably indicate gender — voice objects have no explicit gender field.
 // Includes English hints plus common Ukrainian/Russian TTS voice names
 // (Microsoft/Google/eSpeak-ng ship these under both language packs).
+//
+// Getting a name onto these lists matters more than it looks: an unrecognised
+// name falls through to the split below, which keeps the personas distinct but
+// has no idea which half is which — on a Linux box running RHVoice that handed
+// Marcus a female voice and Emma a male one.
 const NAME_HINTS: Record<VoiceGender, string[]> = {
   male: [
     'male', 'david', 'daniel', 'alex', 'fred', 'mark', 'guy', 'ryan', 'george', 'james', 'thomas',
     'ostap', 'pavel', 'yuri', 'yuriy', 'dmytro', 'anton', 'artem', 'ivan', 'stepan', 'kyrylo',
+    // RHVoice, the usual Ukrainian synthesizer on Linux. 'bdl' and 'evgeniy'
+    // are its CMU-derived English voices, which carry no obvious given name.
+    'anatol', 'volodymyr', 'alan', 'bdl', 'evgeniy',
   ],
   female: [
     'female', 'samantha', 'victoria', 'karen', 'susan', 'zira', 'aria', 'emma', 'olivia', 'moira', 'tessa',
     'polina', 'milena', 'lesya', 'natalia', 'nataliya', 'oksana', 'kateryna', 'olena', 'irina', 'anastasia',
+    // RHVoice — 'clb' and 'slt' are its CMU-derived English voices.
+    'marianna', 'lyubov', 'clb', 'slt',
   ],
 }
 
