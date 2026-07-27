@@ -41,7 +41,21 @@ export const CSP_DIRECTIVES: Directives = {
   // cannot start without it.
   "script-src": ["'self'", "'wasm-unsafe-eval'"],
   "style-src": ["'self'"],
-  "img-src": ["'self'", 'data:'],
+
+  // `blob:` is not optional, and leaving it out shipped a visible regression:
+  // two of the four avatars rendered as empty circles in production.
+  //
+  // A .riv file can embed raster assets (`avatar_senior_devops.riv` and
+  // `21942-41210-lil-avatar.riv` carry PNGs; the other two rigs are pure
+  // vector, which is exactly why only those two broke). Rive decodes them by
+  // wrapping the bytes in a Blob, taking an object URL and handing it to an
+  // Image — a load governed by img-src. Blocked, the character silently fails
+  // to draw: no error, no fallback, just an empty canvas.
+  //
+  // Cheap to allow: a blob: URL can only be minted by script already running on
+  // this origin, so it grants an attacker nothing they did not already have.
+  "img-src": ["'self'", 'data:', 'blob:'],
+
   "font-src": ["'self'"],
 
   // Same-origin covers the i18n bundles and the .riv avatar files; the two CDNs
