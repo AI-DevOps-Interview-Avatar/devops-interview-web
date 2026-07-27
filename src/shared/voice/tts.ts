@@ -41,6 +41,20 @@ const NAME_HINTS: Record<VoiceGender, string[]> = {
   ],
 }
 
+/**
+ * Whole-word matching, which a plain substring search is not.
+ *
+ * "female" contains "male", so a substring search handed the male persona
+ * "Google UK English Female" — the first voice in the list that technically
+ * matched. Chrome's own voice set names its voices exactly that way, so this
+ * misfired on any machine using it. A word boundary keeps the two apart while
+ * still matching "Evgeniy-Eng", where the hyphen is a boundary too.
+ */
+const NAME_PATTERNS: Record<VoiceGender, RegExp> = {
+  male: new RegExp(`\\b(?:${NAME_HINTS.male.join('|')})\\b`, 'i'),
+  female: new RegExp(`\\b(?:${NAME_HINTS.female.join('|')})\\b`, 'i'),
+}
+
 // Only used when a language ships a single voice and both genders collapse onto
 // it — then pitch/rate is the one thing keeping Marcus from sounding exactly
 // like Emma. Kept deliberately shallow (±0.12): a wider shift is what made the
@@ -183,8 +197,7 @@ export function resolveVoice(
   // the browser pick its own default for utterance.lang.
   if (sameLanguage.length === 0) return { voice: null, sharedVoiceFallback: false }
 
-  const hints = NAME_HINTS[gender]
-  const byName = sameLanguage.find((voice) => hints.some((hint) => voice.name.toLowerCase().includes(hint)))
+  const byName = sameLanguage.find((voice) => NAME_PATTERNS[gender].test(voice.name))
   if (byName) return { voice: byName, sharedVoiceFallback: false }
 
   // Nothing named for this gender. If there's more than one voice for the
