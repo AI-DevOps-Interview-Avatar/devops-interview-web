@@ -361,6 +361,93 @@ button {
   }
 }
 
+/* ---------- Loading skeletons ---------- */
+
+.skeleton {
+  border-radius: 8px;
+  background: linear-gradient(
+    100deg,
+    rgba(255, 255, 255, 0.05) 40%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0.05) 60%
+  );
+  /* Oversized so the highlight band has somewhere to travel from and to;
+     it finishes off-screen, leaving a plain block if the sweep is stilled. */
+  background-size: 300% 100%;
+  animation: skeletonSweep 1.4s ease-in-out infinite;
+}
+
+@keyframes skeletonSweep {
+  from { background-position: 150% 0; }
+  to { background-position: -150% 0; }
+}
+
+.skeleton--title {
+  width: min(260px, 70vw);
+  height: 30px;
+}
+
+.skeleton--subtitle {
+  width: min(340px, 82vw);
+  height: 14px;
+}
+
+.skeleton--avatar {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+}
+
+.skeleton--line {
+  width: 100%;
+  height: 12px;
+}
+
+.skeleton--line-short {
+  width: 60%;
+}
+
+.app-skeleton {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  padding: 2rem 1rem;
+}
+
+.app-skeleton__row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.app-skeleton__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  width: 160px;
+  padding: 1.2rem 1rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(20, 25, 40, 0.55);
+}
+
+/* The avatar tile's initial: a .riv file is still being fetched and parsed
+   behind it, so it breathes like the skeletons rather than looking settled. */
+.avatar-placeholder {
+  animation: avatarPlaceholderPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes avatarPlaceholderPulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.15; }
+}
+
 /* Job Search Resources: name and description as two grid columns so every card
    starts its description at the same x-position, however long the name is.
    A flex row with min-width let the longest UA name shift its own row. */
@@ -380,5 +467,25 @@ button {
   .resource-row {
     grid-template-columns: 1fr;
     gap: 0.2rem;
+  }
+}
+
+/* ---------- Reduced motion ----------
+   Everything this file animates moves for decoration only: drifting gradients,
+   floating particles, an orbiting ring, hover lifts, skeleton sweeps. None of
+   it carries meaning, and all of it is what `prefers-reduced-motion` asks us to
+   stop. Neutralising durations wholesale — rather than per selector — is what
+   reaches the per-particle `animation-duration` the hero background sets
+   inline. Decorations that are *positioned* by their animation, and so read as
+   debris once stilled, are dropped from the tree in HeroBackground.tsx.
+   Kept last in the file so nothing declared later can outweigh it. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
