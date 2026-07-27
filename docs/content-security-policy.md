@@ -37,7 +37,7 @@ policy with no extra step.
 | `default-src` | `'self'` | Everything unnamed falls back to same-origin |
 | `script-src` | `'self' 'wasm-unsafe-eval'` | Vite emits the entry as an external module script. `'wasm-unsafe-eval'` permits WebAssembly compilation and nothing else — it is **not** `'unsafe-eval'`, and Rive cannot start without it |
 | `style-src` | `'self'` | CSS is extracted to a file. React applies `style={{…}}` objects through the CSSOM, not as a `style` attribute, so no `'unsafe-inline'` is needed |
-| `img-src` | `'self' data:` | Same-origin favicon; `data:` for any inlined asset |
+| `img-src` | `'self' data: blob:` | Same-origin favicon; `data:` for inlined assets; `blob:` for Rive's raster decode — see below |
 | `font-src` | `'self'` | System font stack, no webfonts |
 | `connect-src` | `'self'` + two CDNs | i18n bundles and `.riv` files are same-origin; the CDNs are the Rive WASM fetch, below |
 | `media-src` | `'self'` | The self-camera tile attaches a `MediaStream` via `srcObject`, which CSP does not govern |
@@ -46,6 +46,31 @@ policy with no extra step.
 | `form-action` | `'none'` | Nothing on the site submits a form |
 | `frame-ancestors` | `'none'` | Clickjacking — **header only**, see below |
 | `upgrade-insecure-requests` | — | Belt and braces on an HTTPS-only host |
+
+## `blob:` and the avatars that embed raster art
+
+The first version of this policy shipped `img-src 'self' data:` and broke two of
+the four avatars in production: Marcus and Olivia rendered as empty circles
+while Emma and David were fine.
+
+The split is not random. A `.riv` file may embed raster assets, and these two do
+— `strings public/avatars/avatar_senior_devops.riv` shows `character.png`,
+`left eyebrow.png` and PNG chunk markers; `21942-41210-lil-avatar.riv` carries
+the same. The other two rigs are pure vector, so they never touch the image
+path. Rive decodes an embedded image by wrapping the bytes in a `Blob`, taking
+an object URL from it, and handing that to an `Image` — a load `img-src`
+governs. Denied, the character simply does not draw: no exception, no fallback,
+an empty canvas.
+
+Allowing `blob:` costs nothing defensively. Only script already running on this
+origin can mint a blob URL, so it grants an attacker nothing they did not
+already have.
+
+**The lesson worth keeping:** a CSP failure is invisible to `npm run build` and
+to every unit test. This one reached production because the policy was verified
+by reasoning rather than by opening the site. `config/csp.test.ts` now pins
+`blob:` in place, but the browser checklist at the end of this document is not
+optional.
 
 ## The Rive CDN dependency
 

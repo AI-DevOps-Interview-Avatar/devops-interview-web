@@ -28,6 +28,14 @@ describe('policy strength', () => {
     expect(metaPolicy()).toContain("default-src 'self'")
   })
 
+  it('lets Rive decode the raster assets embedded in a .riv file', () => {
+    // Regression guard. Rive turns an embedded PNG into a Blob, takes an object
+    // URL and loads it through an Image, so img-src governs it. Without blob:
+    // the two rigs that carry PNGs render as empty circles in production while
+    // the two pure-vector ones look fine — a failure with no error attached.
+    expect(CSP_DIRECTIVES['img-src']).toContain('blob:')
+  })
+
   it('blocks plugins, framing and form submission outright', () => {
     const policy = headerPolicy()
     expect(policy).toContain("object-src 'none'")
