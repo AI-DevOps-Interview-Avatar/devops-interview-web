@@ -13,6 +13,13 @@ export function isSpeechRecognitionSupported(): boolean {
 
 export interface ListeningHandle {
   stop: () => void
+  /**
+   * Kills the session immediately instead of waiting for the recognition
+   * service to finalize. Used when the page is going away: a `stop()` there
+   * leaves the session alive past unmount, and those leftovers are what made
+   * the mic progressively less responsive after several recruiter switches.
+   */
+  abort: () => void
 }
 
 /**
@@ -79,5 +86,20 @@ export function startListening(
     return null
   }
 
-  return { stop: () => recognition.stop() }
+  return {
+    stop: () => recognition.stop(),
+    abort: () => {
+      // Detach the handlers first: abort() fires onend, and running the normal
+      // end path while the component is unmounting would flush a transcript
+      // into a session that no longer exists.
+      recognition.onresult = null
+      recognition.onerror = null
+      recognition.onend = null
+      try {
+        recognition.abort()
+      } catch {
+        // Session already dead — nothing left to release.
+      }
+    },
+  }
 }

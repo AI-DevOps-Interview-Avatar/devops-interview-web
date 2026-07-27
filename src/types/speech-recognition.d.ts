@@ -32,6 +32,7 @@ interface SpeechRecognition extends EventTarget {
   maxAlternatives: number
   start(): void
   stop(): void
+  abort(): void
   onstart: (() => void) | null
   onresult: ((event: SpeechRecognitionEvent) => void) | null
   onerror: ((event: SpeechRecognitionErrorEvent) => void) | null
