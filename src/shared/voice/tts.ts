@@ -6,6 +6,16 @@ const LANG_TAGS: Record<VoiceLang, string> = { en: 'en-US', ua: 'uk-UA' }
 /** How long to wait for the browser to populate its voice list before giving up on it. */
 const VOICES_TIMEOUT_MS = 2000
 
+// Chrome stops synthesis roughly 15 seconds into a continuous run and never
+// reports an error — the chat and subtitles kept scrolling while the recruiter
+// went mute mid-interview. Two independent guards against it: no single
+// utterance is long enough to reach the cutoff, and a timer keeps nudging the
+// engine while a queue is playing.
+/** Upper bound per utterance — about 10 seconds of speech at a normal rate. */
+const CHUNK_MAX_CHARS = 160
+/** Nudge interval, comfortably under the cutoff. */
+const KEEP_ALIVE_MS = 9000
+
 // Name substrings seen across Chrome/Edge/Safari/espeak voice lists that
 // reliably indicate gender — voice objects have no explicit gender field.
 // Includes English hints plus common Ukrainian/Russian TTS voice names
@@ -135,14 +145,100 @@ export function resolveVoice(
   return { voice: sameLanguage[0], sharedVoiceFallback: true }
 }
 
+/**
+ * Breaks `text` into utterance-sized pieces on sentence boundaries.
+ *
+ * The browser plays queued utterances back-to-back, so splitting costs no
+ * audible gap — but it does keep every individual utterance well under the
+ * duration where Chrome gives up. A sentence longer than the budget is cut on
+ * the last comma or space that fits, never mid-word.
+ *
+ * Returns an empty array for blank input.
+ */
+export function splitIntoChunks(text: string, maxChars = CHUNK_MAX_CHARS): string[] {
+  const chunks: string[] = []
+  let current = ''
+
+  const push = (piece: string) => {
+    const trimmed = piece.trim()
+    if (trimmed) chunks.push(trimmed)
+  }
+
+  // Keeps the terminator and trailing space attached to its sentence.
+  for (const sentence of text.match(/[^.!?…]+[.!?…]*\s*/g) ?? [text]) {
+    if (!sentence.trim()) continue
+
+    if (current.length + sentence.length <= maxChars) {
+      current += sentence
+      continue
+    }
+
+    push(current)
+
+    let rest = sentence
+    while (rest.length > maxChars) {
+      const window = rest.slice(0, maxChars)
+      const comma = window.lastIndexOf(', ')
+      const space = window.lastIndexOf(' ')
+      const cut = comma > 0 ? comma + 1 : space > 0 ? space : maxChars
+      push(rest.slice(0, cut))
+      rest = rest.slice(cut)
+    }
+    current = rest
+  }
+
+  push(current)
+  return chunks
+}
+
+let keepAliveTimer: ReturnType<typeof setInterval> | null = null
+
+function stopKeepAlive(): void {
+  if (keepAliveTimer === null) return
+  clearInterval(keepAliveTimer)
+  keepAliveTimer = null
+}
+
+function startKeepAlive(): void {
+  stopKeepAlive()
+  keepAliveTimer = setInterval(() => {
+    const synth = window.speechSynthesis
+    if (!synth.speaking) {
+      // Nothing left to keep alive — don't leave the timer running.
+      stopKeepAlive()
+      return
+    }
+    // pause() immediately followed by resume() resets Chrome's internal cutoff
+    // timer with no audible seam; on engines without the bug it's a no-op pair.
+    synth.pause()
+    synth.resume()
+  }, KEEP_ALIVE_MS)
+}
+
 // Every speak()/stopSpeaking() call takes the next token. An utterance that was
 // still waiting on voicesReady() when the token moved on has been superseded and
 // must not reach the synthesizer — otherwise a recruiter starts talking over the
 // Session Summary that just replaced them.
 let activeSpeechToken = 0
 
+/**
+ * Resolves the caller's `onEnd` for the utterance run currently queued. Kept
+ * module-level so a cancel path can settle it: the greeting is awaited, and
+ * leaving that promise unresolved would stall the interview before its first
+ * question.
+ */
+let activeRunSettle: (() => void) | null = null
+
+function endActiveRun(): void {
+  const settle = activeRunSettle
+  activeRunSettle = null
+  stopKeepAlive()
+  settle?.()
+}
+
 function resetSynth(): void {
   const synth = window.speechSynthesis
+  stopKeepAlive()
   synth.cancel()
   // Chrome leaves its queue wedged in a paused state when cancel() lands
   // mid-utterance: every later speak() then silently no-ops until a full page
@@ -160,6 +256,7 @@ export function speak(text: string, lang: VoiceLang, gender: VoiceGender, onEnd?
 
   const token = ++activeSpeechToken
   resetSynth()
+  endActiveRun()
 
   void voicesReady().then((voices) => {
     // Superseded while the voice list was loading. `onEnd` still has to run so
@@ -169,23 +266,52 @@ export function speak(text: string, lang: VoiceLang, gender: VoiceGender, onEnd?
       return
     }
 
-    const utterance = new SpeechSynthesisUtterance(text)
-    utterance.lang = LANG_TAGS[lang]
+    const chunks = splitIntoChunks(text)
+    if (chunks.length === 0) {
+      onEnd?.()
+      return
+    }
 
     const { voice, sharedVoiceFallback } = resolveVoice(voices, lang, gender)
-    if (voice) {
-      utterance.voice = voice
-    }
-    if (sharedVoiceFallback) {
-      const prosody = GENDER_PROSODY[gender]
-      utterance.pitch = prosody.pitch
-      utterance.rate = prosody.rate
+    const synth = window.speechSynthesis
+    let remaining = chunks.length
+    let settled = false
+
+    activeRunSettle = () => {
+      if (settled) return
+      settled = true
+      onEnd?.()
     }
 
-    utterance.onend = () => onEnd?.()
-    utterance.onerror = () => onEnd?.()
+    for (const chunk of chunks) {
+      const utterance = new SpeechSynthesisUtterance(chunk)
+      utterance.lang = LANG_TAGS[lang]
+      if (voice) {
+        utterance.voice = voice
+      }
+      if (sharedVoiceFallback) {
+        const prosody = GENDER_PROSODY[gender]
+        utterance.pitch = prosody.pitch
+        utterance.rate = prosody.rate
+      }
 
-    window.speechSynthesis.speak(utterance)
+      utterance.onend = () => {
+        // A superseded run is settled by whoever superseded it.
+        if (token !== activeSpeechToken) return
+        remaining -= 1
+        if (remaining === 0) endActiveRun()
+      }
+      // A failed chunk takes the rest of the queue down with it in practice, so
+      // don't wait on siblings that will never speak.
+      utterance.onerror = () => {
+        if (token !== activeSpeechToken) return
+        endActiveRun()
+      }
+
+      synth.speak(utterance)
+    }
+
+    startKeepAlive()
   })
 }
 
@@ -194,4 +320,5 @@ export function stopSpeaking(): void {
   if (!isSpeechSynthesisSupported()) return
   activeSpeechToken += 1
   resetSynth()
+  endActiveRun()
 }

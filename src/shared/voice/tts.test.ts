@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { resetVoiceCache, resolveVoice, speak, stopSpeaking, voicesReady } from './tts'
+import { resetVoiceCache, resolveVoice, speak, splitIntoChunks, stopSpeaking, voicesReady } from './tts'
 
 type FakeVoice = Pick<SpeechSynthesisVoice, 'name' | 'lang' | 'localService'>
 
@@ -28,12 +28,25 @@ function stubSpeechSynthesis(voices: SpeechSynthesisVoice[], { async = false } =
   let available = async ? [] : voices
   let cancelCalls = 0
   let resumeCalls = 0
+  let pauseCalls = 0
+  let speaking = false
 
   const synth = {
     getVoices: () => available,
-    speak: (utterance: FakeUtterance) => spoken.push(utterance),
+    get speaking() {
+      return speaking
+    },
+    speak: (utterance: FakeUtterance) => {
+      spoken.push(utterance)
+      speaking = true
+    },
     cancel: () => {
       cancelCalls += 1
+      speaking = false
+      spoken.length = 0
+    },
+    pause: () => {
+      pauseCalls += 1
     },
     resume: () => {
       resumeCalls += 1
@@ -70,6 +83,14 @@ function stubSpeechSynthesis(voices: SpeechSynthesisVoice[], { async = false } =
     get resumeCalls() {
       return resumeCalls
     },
+    get pauseCalls() {
+      return pauseCalls
+    },
+    /** Plays out the whole queue: every utterance reports `end`, like a finished run. */
+    drain: () => {
+      speaking = false
+      spoken.slice().forEach((utterance) => utterance.onend?.())
+    },
     emitVoicesChanged: () => {
       available = voices
       listeners.slice().forEach((listener) => listener())
@@ -78,6 +99,7 @@ function stubSpeechSynthesis(voices: SpeechSynthesisVoice[], { async = false } =
 }
 
 afterEach(() => {
+  vi.useRealTimers()
   vi.unstubAllGlobals()
   resetVoiceCache()
 })
@@ -149,6 +171,39 @@ describe('resolveVoice', () => {
   })
 })
 
+describe('splitIntoChunks', () => {
+  const long = 'Розкажіть про свій досвід з Kubernetes. Які саме кластери ви обслуговували? '
+  const maxChars = 160
+
+  it('keeps every chunk under the limit Chrome can finish', () => {
+    for (const chunk of splitIntoChunks(long.repeat(6), maxChars)) {
+      expect(chunk.length).toBeLessThanOrEqual(maxChars)
+    }
+  })
+
+  it('cuts on sentence boundaries, never mid-word', () => {
+    const chunks = splitIntoChunks(long.repeat(4), maxChars)
+
+    expect(chunks.length).toBeGreaterThan(1)
+    // Rejoining must reproduce the original wording — a mid-word cut would
+    // show up here as a missing or doubled space inside a word.
+    expect(chunks.join(' ')).toBe(long.repeat(4).trim().replace(/\s+/g, ' '))
+  })
+
+  it('splits a single over-long sentence without dropping text', () => {
+    const runOn = `Опишіть ${'дуже '.repeat(80)}довгий процес`
+    const chunks = splitIntoChunks(runOn, maxChars)
+
+    expect(chunks.length).toBeGreaterThan(1)
+    expect(chunks.every((chunk) => chunk.length <= maxChars)).toBe(true)
+    expect(chunks.join(' ')).toBe(runOn.replace(/\s+/g, ' '))
+  })
+
+  it('yields nothing for blank text so speak() has nothing to queue', () => {
+    expect(splitIntoChunks('   ')).toEqual([])
+  })
+})
+
 describe('speak', () => {
   it('leaves prosody untouched on a properly gendered voice', async () => {
     const synth = stubSpeechSynthesis([
@@ -183,6 +238,43 @@ describe('speak', () => {
 
     await vi.waitFor(() => expect(onEnd).toHaveBeenCalled())
     expect(synth.spoken).toHaveLength(0)
+  })
+
+  it('queues a long answer as several utterances and reports end only once the last one finishes', async () => {
+    const synth = stubSpeechSynthesis([voice('Microsoft Polina', 'uk-UA')])
+    const onEnd = vi.fn()
+    const longAnswer = 'Розкажіть про свій досвід з Kubernetes. Які кластери ви обслуговували? '.repeat(5)
+
+    speak(longAnswer, 'ua', 'female', onEnd)
+    await vi.waitFor(() => expect(synth.spoken.length).toBeGreaterThan(1))
+
+    // Partial drain: the run is not over while utterances are still queued.
+    synth.spoken[0].onend?.()
+    expect(onEnd).not.toHaveBeenCalled()
+
+    synth.drain()
+    expect(onEnd).toHaveBeenCalledTimes(1)
+  })
+
+  it('nudges the engine while a queue plays and drops the timer once it drains', async () => {
+    const synth = stubSpeechSynthesis([voice('Microsoft Polina', 'uk-UA')])
+    // Timers must be faked before speak() so the keep-alive interval it starts
+    // is the fake one. The voice list is already loaded, so a couple of
+    // microtask turns is all it takes to queue the run — no timer involved.
+    vi.useFakeTimers()
+    speak('Перше речення. Друге речення. Третє речення.', 'ua', 'female')
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(synth.spoken.length).toBeGreaterThan(0)
+
+    vi.advanceTimersByTime(9000)
+    expect(synth.pauseCalls).toBe(1)
+    expect(synth.resumeCalls).toBe(2) // one from speak()'s reset, one from the nudge
+
+    synth.drain()
+    vi.advanceTimersByTime(90_000)
+    expect(synth.pauseCalls).toBe(1) // interval cleared — no leaked timer
+    vi.useRealTimers()
   })
 
   it('unwedges Chrome’s paused queue by resuming after every cancel', () => {
