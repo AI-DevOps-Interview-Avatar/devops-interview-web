@@ -93,6 +93,52 @@ export function resetVoiceCache(): void {
   voicesPromise = null
 }
 
+function langPrefixOf(lang: VoiceLang): string {
+  return LANG_TAGS[lang].split('-')[0]
+}
+
+/**
+ * Whether this browser can speak `lang` at all.
+ *
+ * A locale with no installed voice produces silence, not an error: the engine
+ * accepts the utterance and says nothing. Callers use this to warn instead of
+ * leaving the candidate waiting for audio that is never coming.
+ */
+export async function isLanguageSpeakable(lang: VoiceLang): Promise<boolean> {
+  if (!isSpeechSynthesisSupported()) return false
+  const voices = await voicesReady()
+  // An empty list means the engine never reported its voices — assume it can
+  // still speak with its default rather than raising a false alarm.
+  if (voices.length === 0) return true
+  return voices.some((voice) => voice.lang.toLowerCase().startsWith(langPrefixOf(lang)))
+}
+
+// Whether audio is actually coming out right now. The avatar rig used to be
+// driven by token streaming instead, so the mouth moved while the text was
+// being generated and went still exactly when the recruiter started talking.
+type SpeakingListener = (speaking: boolean) => void
+const speakingListeners = new Set<SpeakingListener>()
+let speakingNow = false
+
+function setSpeaking(next: boolean): void {
+  if (speakingNow === next) return
+  speakingNow = next
+  speakingListeners.forEach((listener) => listener(next))
+}
+
+/**
+ * Subscribes to playback start/stop. Returns an unsubscribe function.
+ *
+ * The listener is not called on subscribe — only on change — so it is safe to
+ * wire straight into an effect.
+ */
+export function subscribeSpeaking(listener: SpeakingListener): () => void {
+  speakingListeners.add(listener)
+  return () => {
+    speakingListeners.delete(listener)
+  }
+}
+
 export interface VoiceSelection {
   voice: SpeechSynthesisVoice | null
   /**
@@ -113,7 +159,7 @@ export function resolveVoice(
   lang: VoiceLang,
   gender: VoiceGender,
 ): VoiceSelection {
-  const langPrefix = LANG_TAGS[lang].split('-')[0]
+  const langPrefix = langPrefixOf(lang)
   const sameLanguage = voices
     .filter((voice) => voice.lang.toLowerCase().startsWith(langPrefix))
     // Network-backed voices (e.g. Chrome's "Google ..." voices) sound far more
@@ -233,12 +279,14 @@ function endActiveRun(): void {
   const settle = activeRunSettle
   activeRunSettle = null
   stopKeepAlive()
+  setSpeaking(false)
   settle?.()
 }
 
 function resetSynth(): void {
   const synth = window.speechSynthesis
   stopKeepAlive()
+  setSpeaking(false)
   synth.cancel()
   // Chrome leaves its queue wedged in a paused state when cancel() lands
   // mid-utterance: every later speak() then silently no-ops until a full page
@@ -311,6 +359,10 @@ export function speak(text: string, lang: VoiceLang, gender: VoiceGender, onEnd?
       synth.speak(utterance)
     }
 
+    // Queued, so audio is milliseconds away. Deliberately not waiting for the
+    // first `onstart`: engines that never fire it would leave the avatar frozen
+    // through the whole answer.
+    setSpeaking(true)
     startKeepAlive()
   })
 }
