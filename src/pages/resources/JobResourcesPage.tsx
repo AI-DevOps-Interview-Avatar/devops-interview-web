@@ -36,28 +36,22 @@ export default function JobResourcesPage() {
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
               {category.items.map((item) => (
-                <div
-                  key={item.name}
-                  style={{
-                    display: 'flex',
-                    gap: '0.6rem',
-                    padding: '0.5rem 0.75rem',
-                    borderRadius: 8,
-                    border: '1px solid #383944',
-                    background: '#2a2b33',
-                  }}
-                >
+                // A grid, not a flex row: `minWidth` on the name let a long one
+                // («Робота зараз: Україна» in the UA locale) push the description
+                // to a different x-position than its neighbours. Fixed columns
+                // wrap the name inside its own cell instead.
+                <div key={item.name} className="resource-row">
                   {item.url ? (
                     <a
                       href={item.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ minWidth: 140, fontWeight: 700, color: '#c084fc' }}
+                      style={{ fontWeight: 700, color: '#c084fc' }}
                     >
                       {item.name} ↗
                     </a>
                   ) : (
-                    <strong style={{ minWidth: 140 }}>{item.name}</strong>
+                    <strong>{item.name}</strong>
                   )}
                   <span style={{ color: '#d1d5db' }}>{item[lang]}</span>
                 </div>
