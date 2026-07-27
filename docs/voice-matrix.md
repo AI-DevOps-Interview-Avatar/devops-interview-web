@@ -88,6 +88,51 @@ but it does mean Marcus and David sound like a pitch-shifted Lesya on a machine
 with a single Ukrainian voice. Installing a second voice removes the nudge
 entirely.
 
+### Linux (any browser)
+
+Linux ships no speech voices of its own. Chrome, Firefox and Edge all go through
+`speech-dispatcher`, so the browser is irrelevant — what matters is which
+synthesizer modules are installed and enabled. A machine with none exposes an
+empty voice list and the session screen shows the unspeakable-locale warning.
+
+The usual setup for Ukrainian is RHVoice, which speaks it far better than
+espeak-ng:
+
+```bash
+sudo apt install rhvoice rhvoice-ukrainian rhvoice-english speech-dispatcher-rhvoice
+```
+
+`speech-dispatcher` then needs the module enabled and made default. Editing the
+per-user copy avoids root and is what a desktop browser reads anyway:
+
+```bash
+mkdir -p ~/.config/speech-dispatcher
+cp /etc/speech-dispatcher/speechd.conf ~/.config/speech-dispatcher/
+# in that copy:
+#   AddModule "rhvoice"   "sd_rhvoice"   "rhvoice.conf"
+#   AddModule "espeak-ng" "sd_espeak-ng" "espeak-ng.conf"
+#   DefaultModule rhvoice
+```
+
+Note that adding any explicit `AddModule` line turns off autodetection, so
+espeak-ng has to be listed too or it disappears. Restart the daemon
+(`pkill -f /usr/bin/speech-dispatcher`) and then the browser — voices are
+enumerated once at startup, reloading the tab is not enough.
+
+Available RHVoice voices: `Anatol`, `Volodymyr` (male, uk), `Natalia`,
+`Marianna` (female, uk), `Alan`, `Bdl`, `Evgeniy-Eng` (male, en), `Clb`, `Slt`,
+`Lyubov` (female, en).
+
+| Persona | UA | EN |
+|---|---|---|
+| Emma / Olivia (female) | Marianna | Clb |
+| Marcus / David (male) | Anatol | Alan |
+
+None of these names resemble the Microsoft or Apple ones, so they had to be
+added to `NAME_HINTS` explicitly. Until they were, step 4 decided instead — and
+step 4 has no idea which half of an alphabetical list is male: it gave Marcus
+`Natalia` and Emma `Alan`.
+
 ### Any browser with no voice for the locale
 
 No voice is assigned, the browser default speaks or stays silent, and the session
