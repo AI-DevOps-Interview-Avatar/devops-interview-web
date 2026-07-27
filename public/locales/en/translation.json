@@ -64,7 +64,16 @@
       "listening": "Listening…",
       "recordingSent": "Answer sent",
       "recordingEmpty": "No speech detected",
-      "notAvailable": "Not available in this mock interview"
+      "notAvailable": "Not available in this mock interview",
+      "micErrors": {
+        "no-speech": "No speech was picked up. Check that the right microphone is selected, then try again or type your answer.",
+        "not-allowed": "Microphone access is blocked. Allow it via the padlock icon in the address bar and reload the page.",
+        "audio-capture": "No microphone found. Connect one or pick another input device in your system settings.",
+        "network": "The speech recognition service is unreachable. Check your connection and try again, or type your answer.",
+        "language-not-supported": "This browser cannot recognize the selected interview language. Please type your answer instead.",
+        "busy": "The previous recording is still closing. Give it a moment and press again.",
+        "unknown": "Voice input failed. Try again or type your answer."
+      }
     }
   },
   "history": {

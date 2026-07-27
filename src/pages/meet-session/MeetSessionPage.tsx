@@ -29,7 +29,12 @@ import {
   VideocamOffIcon,
 } from '../../shared/ui/icons'
 import { speak, stopSpeaking } from '../../shared/voice/tts'
-import { isSpeechRecognitionSupported, startListening, type ListeningHandle } from '../../shared/voice/stt'
+import {
+  isSpeechRecognitionSupported,
+  startListening,
+  type ListeningHandle,
+  type SpeechErrorCode,
+} from '../../shared/voice/stt'
 import type { RootState } from '../../store'
 
 export default function MeetSessionPage() {
@@ -52,6 +57,10 @@ export default function MeetSessionPage() {
   // then 'sent'/'empty' for a couple seconds after it stops so the user gets
   // explicit start/stop feedback instead of the mic icon silently changing.
   const [recordingStatus, setRecordingStatus] = useState<'idle' | 'listening' | 'sent' | 'empty'>('idle')
+  // Sticks around until the next mic press, unlike the transient banner above:
+  // "allow the microphone in your browser settings" is an instruction to act on,
+  // not a notification to glance at.
+  const [micError, setMicError] = useState<SpeechErrorCode | null>(null)
   const [showReference, setShowReference] = useState(false)
   const backendRef = useRef(new MockLlmBackend())
   const listeningHandleRef = useRef<ListeningHandle | null>(null)
@@ -148,7 +157,10 @@ export default function MeetSessionPage() {
       // The last question is usually still being spoken when the final answer
       // lands — without this the recruiter keeps talking over Session Summary.
       stopSpeaking()
-      listeningHandleRef.current?.stop()
+      // abort(), not stop(): the interview is over, so a flush here would post
+      // an answer into a session that has already been assessed.
+      listeningHandleRef.current?.abort()
+      listeningHandleRef.current = null
       saveToHistory()
       if (pipelineMode && pipelineStageIndex !== null && !stageCompletedRef.current) {
         stageCompletedRef.current = true
@@ -223,33 +235,40 @@ export default function MeetSessionPage() {
   }, [recordingStatus])
 
   function toggleListening() {
-    if (listening) {
-      listeningHandleRef.current?.stop()
+    // Keyed off the live handle rather than `listening`, which only turns true
+    // once the recognizer reports onstart — otherwise a press landing in that
+    // window would open a second session on top of the first.
+    if (listeningHandleRef.current) {
+      // Closes and flushes synchronously, so the button flips on this tick
+      // instead of waiting seconds for the service to finalize.
+      listeningHandleRef.current.stop()
       return
     }
     stopSpeaking()
+    setMicError(null)
     capturedTranscriptRef.current = false
-    const handle = startListening(
-      lang,
-      (transcript) => {
-        // The recognizer now keeps listening (continuous mode) until the
-        // user stops it, so this only fires once with the full answer —
-        // send it straight away rather than waiting for a manual "Send".
+    listeningHandleRef.current = startListening(lang, {
+      // Only now is the mic genuinely live — showing "listening" any earlier is
+      // a guess, and it was wrong exactly when the session failed to start.
+      onStart: () => {
+        setListening(true)
+        setRecordingStatus('listening')
+      },
+      onResult: (transcript) => {
+        // The recognizer keeps listening (continuous mode) until the user stops
+        // it, so this fires once with the full answer — send it straight away
+        // rather than waiting for a manual "Send".
         capturedTranscriptRef.current = true
         const combined = draft ? `${draft} ${transcript}` : transcript
         sendMessage(combined)
       },
-      () => {
+      onEnd: () => {
         setListening(false)
         listeningHandleRef.current = null
         setRecordingStatus(capturedTranscriptRef.current ? 'sent' : 'empty')
       },
-      () => setRecordingStatus('listening'),
-    )
-    if (handle) {
-      listeningHandleRef.current = handle
-      setListening(true)
-    }
+      onError: setMicError,
+    })
   }
 
   const assessment = useMemo(
@@ -323,7 +342,31 @@ export default function MeetSessionPage() {
             </div>
           )}
 
-          {!finished && recordingStatus !== 'idle' && (
+          {!finished && micError && (
+            <div
+              role="alert"
+              style={{
+                position: 'absolute',
+                top: 24,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                maxWidth: 'min(90%, 460px)',
+                background: 'rgba(120, 26, 26, 0.92)',
+                border: '1px solid #f4433680',
+                padding: '0.5rem 0.9rem',
+                borderRadius: 10,
+                fontSize: 13,
+                lineHeight: 1.35,
+                textAlign: 'center',
+              }}
+            >
+              {t(`meet.controls.micErrors.${micError}`)}
+            </div>
+          )}
+
+          {/* Hidden while an error is up: the two would otherwise stack, and the
+              error text already says everything "No speech detected" would. */}
+          {!finished && !micError && recordingStatus !== 'idle' && (
             <div
               style={{
                 position: 'absolute',
@@ -483,7 +526,9 @@ export default function MeetSessionPage() {
                 {streaming}
               </div>
             )}
-            {listening && (
+            {/* Derived, not stored: aborting the mic on `finished` deliberately
+                skips its onEnd, so `listening` can still be true here. */}
+            {listening && !finished && (
               <div style={{ alignSelf: 'center', color: '#9ca3af', fontSize: 13 }}>{t('meet.controls.listening')}</div>
             )}
           </div>
