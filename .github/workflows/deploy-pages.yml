@@ -24,6 +24,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Blocks the deploy on any high or critical advisory that is not written
+      # down in scripts/auditGate.mjs with a reason and a review date. Plain
+      # `npm audit --audit-level=high` cannot sit here: the one advisory we
+      # carry has no fixed release to move to, so it would fail every build.
+      - run: npm run audit:ci
       - run: npm run lint
       - run: npm test
       - run: npm run build
