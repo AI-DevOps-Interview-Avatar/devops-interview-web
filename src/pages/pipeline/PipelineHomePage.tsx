@@ -50,6 +50,9 @@ export default function PipelineHomePage() {
           return (
             <button
               key={stage.key}
+              data-testid="stage-card"
+              data-stage-index={index}
+              data-stage-status={status}
               onClick={() => openStage(index)}
               disabled={status === 'locked'}
               aria-label={`${t('pipeline.stageLabel', { number: index + 1 })}: ${t(stage.titleKey)}`}

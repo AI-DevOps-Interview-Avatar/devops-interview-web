@@ -64,6 +64,8 @@ export default function InterviewerSelectionPage() {
           {INTERVIEWERS.map((interviewer) => (
             <button
               key={interviewer.id}
+              data-testid="interviewer-card"
+              data-interviewer-id={interviewer.id}
               aria-label={`${interviewer.role} card, ${interviewer.difficulty} difficulty`}
               onClick={() => navigate(`/interview/${interviewer.id}`)}
               className="glass-card"

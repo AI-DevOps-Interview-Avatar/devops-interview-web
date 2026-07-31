@@ -76,6 +76,22 @@ QA reported as choppy, and a correctly gendered local voice is the safer default
 Same Microsoft pack without the Google voices, so the outcome is identical to the
 table above. This matches QA's observation that Edge sounded fine.
 
+### Firefox (Windows 10 / macOS)
+
+Firefox has no voices of its own: on Windows it speaks through the same SAPI
+pack Chrome and Edge use, and on macOS through the same system voices as Safari.
+So its cells are the platform's cells — the Chrome/Edge table above on Windows,
+the Safari table below on macOS — and there is nothing browser-specific left to
+tabulate.
+
+**What is different is recognition: Firefox implements none.** No
+`SpeechRecognition`, no `webkitSpeechRecognition`, on any platform. The
+microphone button is therefore disabled with a tooltip rather than present and
+inert, and text input is the way through the interview. That path is asserted in
+`e2e/lifecycle.spec.ts` ("the button is disabled, not silently inert") using a
+stub with recognition removed, since it is app behaviour rather than engine
+behaviour.
+
 ### Safari (macOS)
 
 Available: `Lesya` (uk-UA), `Samantha` (en-US), `Alex` (en-US).
@@ -174,6 +190,14 @@ speechSynthesis.getVoices()
 
 Attach the output to DIA-155 when reporting a mismatch between this document and
 what a machine actually does.
+
+## Where each claim is checked
+
+The resolver runs against all four voice lists in `src/shared/voice/tts.test.ts`,
+asserting the actual gender of the chosen voice rather than merely that two
+personas differ. Whether the running app hands the resolver the right persona,
+locale and moment is covered end to end in `e2e/voice.spec.ts` — see
+`docs/e2e.md` for why that suite runs in one browser and stubs the engine.
 
 ## Tests
 
