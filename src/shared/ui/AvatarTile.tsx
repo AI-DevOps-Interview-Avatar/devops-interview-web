@@ -2,6 +2,17 @@ import { useRive, Layout, Fit, Alignment } from '@rive-app/react-canvas'
 import { useEffect, useState } from 'react'
 import type { InterviewerProfile } from '../../domain/models/InterviewerProfile'
 import { getCachedRiveBuffer, loadRiveBuffer, riveAssetUrl } from './riveBufferCache'
+import { initRiveRuntime } from './riveRuntime'
+
+// Runs when this module is evaluated, which is necessarily before anything in
+// it can render — and therefore before the first useRive(), which is the only
+// ordering the Rive loader cares about.
+//
+// It used to live in main.tsx, and that was wrong twice over: it pulled the
+// whole Rive runtime into the entry chunk that route-splitting had just moved
+// out of it (DIA-134 caught this, +47 kB gzipped), and it put the setup a long
+// way from the only code that depends on it.
+initRiveRuntime()
 
 const DEFAULT_STATE_MACHINE = 'State Machine 1'
 const SPEAK_INPUT = 'speak'

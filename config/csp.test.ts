@@ -6,7 +6,6 @@ import {
   metaPolicy,
   META_IGNORED_DIRECTIVES,
   RESPONSE_HEADERS,
-  RIVE_WASM_ORIGINS,
 } from './csp.ts'
 
 describe('policy strength', () => {
@@ -44,11 +43,22 @@ describe('policy strength', () => {
     expect(policy).toContain("base-uri 'self'")
   })
 
-  it('names the Rive CDN only under connect-src, never as a script source', () => {
-    for (const origin of RIVE_WASM_ORIGINS) {
-      expect(CSP_DIRECTIVES['connect-src']).toContain(origin)
-      expect(CSP_DIRECTIVES['script-src']).not.toContain(origin)
+  it('names no third-party origin at all, in any directive', () => {
+    // The policy used to allow unpkg.com and cdn.jsdelivr.net under connect-src,
+    // because Rive fetched its WASM runtime from there. It is served from our
+    // own origin now (DIA-181, `src/shared/ui/riveRuntime.ts`), so an external
+    // origin reappearing anywhere in this policy means something started
+    // reaching off-site — on a page that holds camera and microphone
+    // permission. That is a review conversation, not a silent diff.
+    for (const [directive, values] of Object.entries(CSP_DIRECTIVES)) {
+      for (const value of values) {
+        expect(`${directive}: ${value}`).not.toMatch(/:\/\//)
+      }
     }
+  })
+
+  it('keeps connect-src to same-origin, which is what the local WASM copy buys', () => {
+    expect(CSP_DIRECTIVES['connect-src']).toEqual(["'self'"])
   })
 })
 

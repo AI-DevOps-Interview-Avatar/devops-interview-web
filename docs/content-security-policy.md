@@ -39,7 +39,7 @@ policy with no extra step.
 | `style-src` | `'self'` | CSS is extracted to a file. React applies `style={{…}}` objects through the CSSOM, not as a `style` attribute, so no `'unsafe-inline'` is needed |
 | `img-src` | `'self' data: blob:` | Same-origin favicon; `data:` for inlined assets; `blob:` for Rive's raster decode — see below |
 | `font-src` | `'self'` | System font stack, no webfonts |
-| `connect-src` | `'self'` + two CDNs | i18n bundles and `.riv` files are same-origin; the CDNs are the Rive WASM fetch, below |
+| `connect-src` | `'self'` | i18n bundles, `.riv` files and Rive's WASM runtime are all same-origin — see below for how the last one got there |
 | `media-src` | `'self'` | The self-camera tile attaches a `MediaStream` via `srcObject`, which CSP does not govern |
 | `object-src`, `frame-src` | `'none'` | No plugins, no iframes |
 | `base-uri` | `'self'` | Stops an injected `<base>` from repointing every relative URL |
@@ -72,30 +72,47 @@ by reasoning rather than by opening the site. `config/csp.test.ts` now pins
 `blob:` in place, but the browser checklist at the end of this document is not
 optional.
 
-## The Rive CDN dependency
+## The Rive CDN dependency, and how it was removed
 
-`@rive-app/react-canvas` does not bundle its WebAssembly runtime. It fetches it
-at run time from `https://unpkg.com/@rive-app/canvas@<version>/rive.wasm`, with
-jsDelivr as a fallback. Both URLs are in our production bundle — confirm with:
+`@rive-app/react-canvas` does not bundle its WebAssembly runtime. Left alone it
+fetches `https://unpkg.com/@rive-app/canvas@<version>/rive.wasm` on the first
+`useRive()`, with `cdn.jsdelivr.net` behind it for the non-SIMD build. Those two
+origins were the only third-party entries the policy ever carried, and they were
+a real weakness rather than a formality: the avatars stopped rendering whenever
+unpkg had a bad day, and a third party served executable code to a page holding
+camera and microphone permission.
 
-```bash
-npm run build
-grep -o "unpkg\.com[^\"']\{0,60\}" dist/assets/*.js
-```
+DIA-181 moved both binaries to our own origin:
 
-This is the only third-party origin in the entire policy, and it is a genuine
-weakness rather than a formality:
+- `src/shared/ui/riveRuntime.ts` imports them as
+  `@rive-app/canvas/rive.wasm?url` and `…/rive_fallback.wasm?url`, so Vite emits
+  each into `dist/assets/` with the Pages base path applied and the version
+  following whatever npm installed — nothing to copy by hand, nothing to bump;
+- `initRiveRuntime()` hands those URLs to `RuntimeLoader.setWasmUrl()` and
+  `setWasmFallbackUrl()`. `main.tsx` calls it before `createRoot`, because the
+  loader keeps whichever URL it had when the first instance asked for a runtime;
+- `connect-src` is back to `'self'` alone, and `config/csp.test.ts` fails on any
+  directive value containing `://`.
 
-- the interview avatars stop rendering whenever unpkg has a bad day;
-- a third party sits inside the trust boundary of a page that holds camera and
-  microphone permission.
+Two consequences worth knowing:
 
-**Follow-up worth filing:** self-host the `.wasm` (copy it out of
-`node_modules/@rive-app/canvas` during the build, point
-`RuntimeLoader.setWasmUrl()` at the local copy) and drop both CDNs from
-`connect-src`, leaving a policy with no external origins at all. Not done here
-because it changes runtime asset loading, which deserves its own ticket and its
-own browser verification.
+**The CDN strings are still in the bundle.** They are the loader's compiled-in
+defaults, and `grep -o "unpkg\.com[^\"']\{0,60\}" dist/assets/*.js` still finds
+them. That is not a leftover to clean up — it is the safety net. If
+`initRiveRuntime()` ever stops running, the fetch goes to unpkg, `connect-src`
+blocks it, and the console says so. Before this change the same regression would
+have been invisible.
+
+**`@rive-app/canvas` is now a direct dependency**, pinned to the exact version
+`@rive-app/react-canvas` requires. A looser range would let npm nest a second
+copy, and the app would instantiate one version's WebAssembly with another
+version's JavaScript — a mismatch that resolves, type-checks and then simply
+fails to draw. `config/riveWasm.test.ts` compares the two resolutions on every
+run.
+
+The cost is ~3.9 MB of `.wasm` in the deploy (1.9 MB each, gzipped to ~730 KB).
+Only the primary binary is ever fetched on a normal machine; the fallback is
+uploaded so that the architectures needing it do not have to reach a CDN either.
 
 ## What GitHub Pages cannot do
 
@@ -127,10 +144,11 @@ decision and a separate ticket.
 ## Verifying a change to the policy
 
 `config/csp.test.ts` covers the parts that can be asserted without a browser:
-no `'unsafe-eval'` or `'unsafe-inline'` in either policy, the Rive origins
-appear under `connect-src` and never under `script-src`, meta-ignored directives
-are absent from the meta policy and present in the header one, and the
-`_headers` file is well formed.
+no `'unsafe-eval'` or `'unsafe-inline'` in either policy, no third-party origin
+in any directive, `blob:` pinned under `img-src`, meta-ignored directives absent
+from the meta policy and present in the header one, and the `_headers` file well
+formed. `config/riveWasm.test.ts` covers the dependency resolution the local
+WASM copy depends on.
 
 Everything else needs a real browser, because a CSP failure is silent to a build:
 
@@ -141,7 +159,11 @@ npm run build && npm run preview
 Then, with the console open on `http://localhost:4173/devops-interview-web/`:
 
 - no `Refused to …` violations on any route;
-- avatars render on the selection screen (Rive WASM fetched and compiled);
+- all four avatars render on the selection screen **and** inside a session —
+  including Marcus and Olivia, the two rigs that embed PNGs;
+- the Network tab shows `assets/rive-*.wasm` coming from this origin and no
+  request to `unpkg.com` or `cdn.jsdelivr.net`. Blocking both hosts (DevTools →
+  Network request blocking) must change nothing;
 - EN/UA switch works (i18n bundle fetched);
 - an interview session speaks and accepts microphone input;
 - the self-camera tile shows a picture.
