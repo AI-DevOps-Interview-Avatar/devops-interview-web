@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "bundle:budget": "node scripts/bundleBudget.mjs"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.12.0",
