@@ -12,21 +12,6 @@
  * user has already trusted.
  */
 
-/**
- * Rive fetches its WebAssembly runtime from a CDN at run time rather than
- * bundling it: `https://unpkg.com/@rive-app/canvas@<version>/rive.wasm`, with
- * jsDelivr as a fallback. Both strings are in our built bundle — grep
- * `dist/assets/*.js` for `unpkg.com`.
- *
- * These two entries are the only third-party origins in the whole policy, and
- * they are here under protest: it means the interview avatars stop rendering if
- * unpkg has a bad day, and it puts a third party inside the trust boundary of a
- * page holding camera permission. Removing them means self-hosting the `.wasm`
- * and pointing `RuntimeLoader.setWasmUrl()` at it — tracked as a follow-up, see
- * docs/content-security-policy.md.
- */
-export const RIVE_WASM_ORIGINS = ['https://unpkg.com', 'https://cdn.jsdelivr.net'] as const
-
 type Directives = Record<string, readonly string[]>
 
 export const CSP_DIRECTIVES: Directives = {
@@ -58,9 +43,13 @@ export const CSP_DIRECTIVES: Directives = {
 
   "font-src": ["'self'"],
 
-  // Same-origin covers the i18n bundles and the .riv avatar files; the two CDNs
-  // are the Rive WASM fetch described above.
-  "connect-src": ["'self'", ...RIVE_WASM_ORIGINS],
+  // Same-origin and nothing else: the i18n bundles, the .riv avatar files and —
+  // since DIA-181 — Rive's WebAssembly runtime, which used to come from unpkg
+  // with jsDelivr behind it. `src/shared/ui/riveRuntime.ts` now points the
+  // loader at a copy Vite emits into our own assets. Those two origins were the
+  // only third-party ones in the whole policy; keeping them out is what makes
+  // the assertion in csp.test.ts meaningful.
+  "connect-src": ["'self'"],
 
   // The self-camera tile attaches a MediaStream via `srcObject`, which CSP does
   // not govern — no blob: needed here.
