@@ -64,6 +64,8 @@ function AvatarCanvas({
 
   return (
     <div
+      data-testid="avatar"
+      data-interviewer-id={interviewer.id}
       style={{
         width: size,
         height: size,

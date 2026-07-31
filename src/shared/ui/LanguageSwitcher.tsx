@@ -18,6 +18,7 @@ export function LanguageSwitcher() {
       {SUPPORTED_LANGUAGES.map((lang) => (
         <button
           key={lang}
+          data-testid={`lang-${lang}`}
           onClick={() => setLanguage(lang)}
           aria-pressed={i18n.resolvedLanguage === lang}
           style={{

@@ -409,12 +409,14 @@ export default function MeetSessionPage() {
             </div>
           )}
 
-          {!finished && micError && <AlertBanner>{t(`meet.controls.micErrors.${micError}`)}</AlertBanner>}
+          {!finished && micError && (
+            <AlertBanner testId="mic-error">{t(`meet.controls.micErrors.${micError}`)}</AlertBanner>
+          )}
 
           {/* Sits below the mic error so both can be true at once — a machine
               with no Ukrainian voice pack often has no microphone either. */}
           {!finished && voiceUnavailable && (
-            <AlertBanner tone="warning" top={micError ? 76 : 24}>
+            <AlertBanner testId="voice-unavailable" tone="warning" top={micError ? 76 : 24}>
               {t('meet.controls.voiceUnavailable')}
             </AlertBanner>
           )}
@@ -423,6 +425,7 @@ export default function MeetSessionPage() {
               error text already says everything "No speech detected" would. */}
           {!finished && !micError && recordingStatus !== 'idle' && (
             <div
+              data-testid="recording-status"
               style={{
                 position: 'absolute',
                 top: 24,
@@ -458,6 +461,7 @@ export default function MeetSessionPage() {
 
           {!finished && captionsOn && caption && (
             <p
+              data-testid="caption"
               style={{
                 position: 'absolute',
                 bottom: 24,
@@ -483,6 +487,7 @@ export default function MeetSessionPage() {
         <footer className="meet-toolbar">
           <div style={{ display: 'flex', gap: '0.5rem', background: '#2a2b2f', borderRadius: 999, padding: 6 }}>
             <ControlButton
+              testId="mic"
               label={listening ? t('meet.controls.micStop') : t('meet.controls.micStart')}
               onClick={toggleListening}
               active={listening}
@@ -500,6 +505,7 @@ export default function MeetSessionPage() {
               {cameraOn ? <VideocamIcon /> : <VideocamOffIcon />}
             </ControlButton>
             <ControlButton
+              testId="captions"
               label={t('meet.controls.captions')}
               onClick={() => setCaptionsOn((v) => !v)}
               active={captionsOn}
@@ -515,7 +521,7 @@ export default function MeetSessionPage() {
             </ControlButton>
           </div>
 
-          <ControlButton label={t('meet.controls.hangup')} tone="#f44336" wide onClick={handleHangup}>
+          <ControlButton testId="hangup" label={t('meet.controls.hangup')} tone="#f44336" wide onClick={handleHangup}>
             <CallEndIcon />
           </ControlButton>
 
@@ -527,6 +533,7 @@ export default function MeetSessionPage() {
               <PeopleIcon />
             </ControlButton>
             <ControlButton
+              testId="chat-toggle"
               label={t('meet.controls.chat')}
               onClick={() => setMessagesOpen((v) => !v)}
               active={messagesOpen}
@@ -560,6 +567,8 @@ export default function MeetSessionPage() {
               return (
                 <div
                   key={idx}
+                  data-testid="message"
+                  data-author={m.author}
                   style={{
                     alignSelf: m.author === 'user' ? 'flex-end' : 'flex-start',
                     background: m.author === 'user' ? interviewer.color : '#2a2b33',
@@ -590,6 +599,7 @@ export default function MeetSessionPage() {
           {!finished && (
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <input
+                data-testid="chat-input"
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
@@ -597,7 +607,7 @@ export default function MeetSessionPage() {
                 disabled={Boolean(streaming)}
                 style={{ flex: 1, padding: '0.5rem', borderRadius: 8, border: '1px solid #383944', background: '#1c1d23', color: 'inherit' }}
               />
-              <button onClick={handleSend} disabled={Boolean(streaming)}>
+              <button data-testid="send" onClick={handleSend} disabled={Boolean(streaming)}>
                 {t('meet.send')}
               </button>
             </div>
@@ -629,6 +639,7 @@ function AssessmentCard({
   const { t } = useTranslation()
   return (
     <div
+      data-testid="assessment"
       style={{
         background: '#1c1d23',
         border: '1px solid #2e303a',
@@ -680,7 +691,7 @@ function AssessmentCard({
       )}
 
       {pipelineCta ? (
-        <button onClick={pipelineCta.onClick} style={{ width: '100%' }}>
+        <button data-testid="pipeline-continue" onClick={pipelineCta.onClick} style={{ width: '100%' }}>
           {pipelineCta.label}
         </button>
       ) : (
@@ -695,10 +706,13 @@ function AssessmentCard({
 /** Overlaid notice on the video tile: something the candidate needs to act on. */
 function AlertBanner({
   children,
+  testId,
   tone = 'error',
   top = 24,
 }: {
   children: React.ReactNode
+  /** Stable hook for tests: the copy inside is localized, and half of them switch locale. */
+  testId?: string
   tone?: 'error' | 'warning'
   top?: number
 }) {
@@ -709,6 +723,7 @@ function AlertBanner({
   return (
     <div
       role="alert"
+      data-testid={testId}
       style={{
         position: 'absolute',
         top,
@@ -731,6 +746,7 @@ function AlertBanner({
 
 function ControlButton({
   label,
+  testId,
   tone = '#3c4043',
   active,
   disabled,
@@ -741,6 +757,8 @@ function ControlButton({
   children,
 }: {
   label: string
+  /** Same reason as AlertBanner: the accessible name is localized. */
+  testId?: string
   tone?: string
   active?: boolean
   disabled?: boolean
@@ -753,6 +771,7 @@ function ControlButton({
 }) {
   return (
     <button
+      data-testid={testId}
       aria-label={label}
       title={title ?? label}
       onClick={onClick}

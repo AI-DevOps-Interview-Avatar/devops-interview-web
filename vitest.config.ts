@@ -6,5 +6,9 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: false,
+    // `e2e/` is Playwright's. Its specs import @playwright/test and drive a
+    // real browser, and vitest's default glob would otherwise pick them up and
+    // fail on the import alone.
+    exclude: ['node_modules/**', 'dist/**', 'e2e/**'],
   },
 })
