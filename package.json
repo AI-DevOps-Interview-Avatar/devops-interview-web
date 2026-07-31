@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.12.0",
+    "@rive-app/canvas": "2.38.5",
     "@rive-app/react-canvas": "^4.29.5",
     "i18next": "^26.3.6",
     "i18next-http-backend": "^4.0.0",
