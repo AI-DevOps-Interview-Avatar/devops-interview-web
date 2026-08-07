@@ -74,7 +74,7 @@ test.describe('mid-interview language switch', () => {
 })
 
 test.describe('no English fallback in Ukrainian', () => {
-  const screens = ['', 'interview', 'pipeline', 'practice', 'resources', 'history', 'developers']
+  const screens = ['', 'interview', 'pipeline', 'practice', 'resources', 'history', 'developers', 'engine']
 
   for (const screen of screens) {
     test(`${screen || 'splash'} is fully translated`, async ({ page }) => {

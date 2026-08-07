@@ -29,6 +29,7 @@ const STATIC_ROUTES = [
   'resources',
   'developers',
   'history',
+  'engine',
 ] as const
 
 /**

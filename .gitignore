@@ -27,3 +27,9 @@ dist-ssr
 test-results
 playwright-report
 blob-report
+
+# On-device model bundles. Half a gigabyte each, fetched at runtime from the
+# devops-interview-app releases (DIA-97) — never committed, and never part of
+# `dist` either: `npm run build` copies all of `public/`, so anything dropped
+# here for a manual run has to be moved out before building.
+public/models/

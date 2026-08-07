@@ -28,4 +28,13 @@ export default defineConfig([
       globals: globals.node,
     },
   },
+  {
+    // Scripts that drive a real browser. The bodies they hand to
+    // `page.waitForFunction` are serialised and evaluated in the page, so they
+    // reference `document` from a file that otherwise runs in Node.
+    files: ['scripts/*LiveCheck.mjs'],
+    languageOptions: {
+      globals: { ...globals.node, ...globals.browser },
+    },
+  },
 ])

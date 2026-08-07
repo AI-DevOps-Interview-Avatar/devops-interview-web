@@ -14,6 +14,7 @@ const NAV_LINKS: { to: string; icon: string; labelKey: string }[] = [
   { to: '/resources', icon: '💼', labelKey: 'selection.resourcesLink' },
   { to: '/developers', icon: '👨‍💻', labelKey: 'selection.developersLink' },
   { to: '/history', icon: '📈', labelKey: 'selection.historyLink' },
+  { to: '/engine', icon: '⚙️', labelKey: 'selection.engineLink' },
 ]
 
 export default function InterviewerSelectionPage() {

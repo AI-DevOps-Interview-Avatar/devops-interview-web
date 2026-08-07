@@ -33,6 +33,7 @@ const PracticeHubPage = lazyPage(() => import('./pages/practice/PracticeHubPage'
 const ResumeReviewPage = lazyPage(() => import('./pages/resume-review/ResumeReviewPage'))
 const JobResourcesPage = lazyPage(() => import('./pages/resources/JobResourcesPage'))
 const DevelopersPage = lazyPage(() => import('./pages/developers/DevelopersPage'))
+const EngineCheckPage = lazyPage(() => import('./pages/engine/EngineCheckPage'))
 
 /**
  * The two screens the splash leads to, fetched while it counts up rather than
@@ -80,6 +81,7 @@ function App() {
         <Route path="/resources" element={<JobResourcesPage />} />
         <Route path="/developers" element={<DevelopersPage />} />
         <Route path="/history" element={<HistoryPage />} />
+        <Route path="/engine" element={<EngineCheckPage />} />
       </Routes>
     </BrowserRouter>
   )
