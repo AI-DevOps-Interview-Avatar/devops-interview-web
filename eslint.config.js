@@ -30,9 +30,14 @@ export default defineConfig([
   },
   {
     // Scripts that drive a real browser. The bodies they hand to
-    // `page.waitForFunction` are serialised and evaluated in the page, so they
-    // reference `document` from a file that otherwise runs in Node.
-    files: ['scripts/*LiveCheck.mjs'],
+    // `page.evaluate` and `page.waitForFunction` are serialised and evaluated in
+    // the page, so they reference `document` from a file that otherwise runs in
+    // Node.
+    //
+    // Listed one by one rather than matched by a glob: the next script like
+    // this should have to be added here deliberately, instead of inheriting
+    // browser globals because its name happened to fit a pattern.
+    files: ['scripts/engineLiveCheck.mjs', 'scripts/captureScreenshots.mjs'],
     languageOptions: {
       globals: { ...globals.node, ...globals.browser },
     },
