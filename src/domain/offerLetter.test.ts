@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { generateOfferLetter } from './offerLetter'
+import { generateOfferLetter, HIRING_CONTACT } from './offerLetter'
 
 describe('generateOfferLetter', () => {
   it('fills the letter from a fully populated candidate profile', () => {
@@ -38,5 +38,19 @@ describe('generateOfferLetter', () => {
 
   it('trims a name the candidate dictated with trailing whitespace', () => {
     expect(generateOfferLetter({ candidateName: '  Jane Doe  ' }).candidateName).toBe('Jane Doe')
+  })
+})
+
+/**
+ * The signature is the one part of the letter a candidate is expected to act
+ * on, so the details behind it get the same scrutiny as the letter (DIA-203).
+ * The locale side of it is checked in offerLetter.locales.test.mjs, which can
+ * read the translation files without pulling node types into the app build.
+ */
+describe('HIRING_CONTACT', () => {
+  it('points at a profile the name can be checked against', () => {
+    expect(HIRING_CONTACT.linkedIn).toMatch(/^https:\/\/www\.linkedin\.com\/in\/[\w-]+\/?$/)
+    expect(HIRING_CONTACT.name.trim()).toBe(HIRING_CONTACT.name)
+    expect(HIRING_CONTACT.company).toBeTruthy()
   })
 })

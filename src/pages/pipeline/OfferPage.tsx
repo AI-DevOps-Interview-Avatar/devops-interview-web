@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { useTranslation } from 'react-i18next'
 import { canEnterStage, OFFER_STAGE_INDEX } from '../../domain/pipeline'
-import { generateOfferLetter } from '../../domain/offerLetter'
+import { generateOfferLetter, HIRING_CONTACT } from '../../domain/offerLetter'
 import { LanguageSwitcher } from '../../shared/ui/LanguageSwitcher'
 import { PageNav } from '../../shared/ui/PageNav'
 import type { RootState } from '../../store'
@@ -28,6 +28,9 @@ export default function OfferPage() {
     salaryExpectations: offer.salaryExpectations,
     noticePeriod: offer.noticePeriod,
     location: offer.location,
+    contactName: HIRING_CONTACT.name,
+    contactLinkedIn: HIRING_CONTACT.linkedIn,
+    company: HIRING_CONTACT.company,
   })
 
   function handleCopy() {
