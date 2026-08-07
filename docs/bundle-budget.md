@@ -71,8 +71,9 @@ nothing is worse than none.
 DIA-117 also asks for Lighthouse CI and an offline check. This budget answers
 the size half of that ticket; Lighthouse landed separately in
 `docs/lighthouse.md`, and it is worth reading next to this one — the build
-passes every budget above and still scores 48/100 on performance for the screens
-that draw avatars (DIA-201). Bytes and blocking are different problems.
+passes every budget above and the screens that draw avatars still score 11-13
+points below the one that does not (DIA-201). Bytes and blocking are different
+problems.
 
 The offline check stays open, blocked on DIA-96/DIA-97: there is no model bundle
 to cache yet.

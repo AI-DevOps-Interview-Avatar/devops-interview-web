@@ -15,8 +15,8 @@
  *   performance — a timing measurement on shared hardware. GitHub's runners
  *   vary enough that a strict number here would fail builds that changed
  *   nothing, everyone would learn to re-run it, and the whole gate would stop
- *   meaning anything. It is held low deliberately: this number catches a
- *   render-blocking script or a 2 MB image sneaking in, not a 3-point drift.
+ *   meaning anything. It is held a little under what CI reaches, so it catches
+ *   a render-blocking script or a 2 MB image sneaking in, not a 3-point drift.
  *   Byte-level regressions are bundle:budget's job, and it is strict.
  *
  * Raising a number is allowed. Doing it without a sentence saying what got
@@ -29,21 +29,46 @@ import { fileURLToPath } from 'node:url'
 /**
  * Scores are 0-1, matching the Lighthouse report.
  *
- * `performance` is set below what a healthy build should reach, and that is not
- * an oversight. The first run of this gate measured 48 on the two screens that
- * draw Rive avatars — Total Blocking Time of 5.3s and 9.4s — against 99 on a
- * plain content screen. That is a real defect with a real ticket (DIA-201), not
- * something to paper over by loosening the number until it passes quietly.
+ * `performance` is a ratchet, not a target: it sits under what the build
+ * already reaches, so the screens that draw Rive avatars cannot get slower
+ * unnoticed while DIA-201 is open. Closing DIA-201 raises it to 0.95, which
+ * that ticket's acceptance criteria say outright.
  *
- * 0.40 is a ratchet, not a target: it locks in today's floor so the avatars
- * cannot get slower unnoticed while DIA-201 is open. Closing DIA-201 raises
- * this to 0.90 in the same PR, which its acceptance criteria say outright.
+ * Which makes the number it is set against the whole point, and the first
+ * version of this file got that wrong (DIA-202). It shipped 0.40, measured on
+ * a laptop that had just run a build and the e2e suite; CI reports 86 and 88 on
+ * the same commit. A ratchet six points under a floor of 86 is a ratchet; one
+ * forty-six points under it would have watched the avatar screens halve in
+ * score and stayed green.
+ *
+ * Source of the 0.80 below: run #40, commit e844820 — / 86, /interview 88,
+ * /pipeline 99. Re-measure on CI before moving it, never locally.
  */
 export const THRESHOLDS = {
-  performance: 0.4,
+  performance: 0.8,
   accessibility: 1,
   'best-practices': 1,
   seo: 1,
+}
+
+/**
+ * The same 86-vs-48 spread that made 0.40 wrong also makes 0.80 unusable on a
+ * laptop: a developer machine scores 50-60 on the avatar screens, so enforcing
+ * the CI floor locally would mean a gate that is red for everyone, always. That
+ * is the failure mode this file already argues against out loud.
+ *
+ * So performance is enforced where the number means something — a runner — and
+ * reported without a verdict everywhere else. The other three are deterministic
+ * and hold identically in both places; an unlabelled button is an unlabelled
+ * button on any hardware.
+ *
+ * GitHub Actions sets CI=true. If it ever stops, the gate does not fail open
+ * silently: `main()` prints which profile it used above the table.
+ */
+export function thresholdsFor(env = process.env) {
+  if (env.CI) return THRESHOLDS
+
+  return Object.fromEntries(Object.entries(THRESHOLDS).filter(([category]) => category !== 'performance'))
 }
 
 /**
@@ -159,6 +184,13 @@ async function main() {
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const runs = await main()
+  const thresholds = thresholdsFor()
+
+  console.log(
+    thresholds.performance
+      ? 'CI profile — all four categories enforced.'
+      : 'local profile — performance is measured but not enforced; only CI numbers are comparable (see docs/lighthouse.md).',
+  )
 
   const header = ['route'.padEnd(12), ...CATEGORIES.map((c) => c.slice(0, 5).padStart(7))].join(' ')
   console.log(header)
@@ -167,7 +199,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     console.log([run.url.padEnd(12), ...cells].join(' '))
   }
 
-  const failures = checkScores(runs)
+  const failures = checkScores(runs, thresholds)
   for (const failure of failures) console.error(`FAIL:  ${failure}`)
 
   if (failures.length > 0) {
@@ -175,5 +207,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.exit(1)
   }
 
-  console.log(`lighthouse gate passed — ${runs.length} routes, ${CATEGORIES.length} categories each.`)
+  console.log(
+    `lighthouse gate passed — ${runs.length} routes, ${Object.keys(thresholds).length} enforced categories each.`,
+  )
 }
