@@ -1,0 +1,29 @@
+# Runs the full check suite before a merge, which until DIA-121 nothing did.
+#
+# The steps existed, but only in deploy-pages.yml, and that workflow triggers on
+# `push` to main — after the merge. Two changes reached main with no signal at
+# all because of it: one merged onto an already-red main and silently failed to
+# deploy, and one merged with an empty Checks tab.
+name: CI
+
+on:
+  pull_request:
+
+# Pushing three times to a pull request should leave one run standing, not
+# three. Keyed on the branch, so runs on other pull requests are untouched.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    # Same file the deploy calls, so a step added there cannot go unrun here.
+    # Without upload-pages-artifact: a pull request builds dist/ to prove it
+    # builds, and has nothing to publish it to.
+    uses: ./.github/workflows/checks.yml
+    permissions:
+      contents: read
+
+# Not triggered on `push` to main: deploy-pages.yml already runs this exact
+# workflow there, and a second copy would double every merge's CI time to say
+# the same thing twice.

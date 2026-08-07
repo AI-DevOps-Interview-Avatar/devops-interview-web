@@ -1,8 +1,9 @@
 # Acceptance suite
 
 Reference for DIA-166, which supersedes DIA-119 and DIA-136. The suite lives in
-`e2e/`, runs as `npm run test:e2e`, and blocks the deploy in
-`.github/workflows/deploy-pages.yml`.
+`e2e/`, runs as `npm run test:e2e`, and blocks both the merge and the deploy —
+it is a step in `.github/workflows/checks.yml`, which every trigger calls. See
+`docs/ci.md`.
 
 ```bash
 npm run test:e2e                      # 33 tests, ~2 minutes

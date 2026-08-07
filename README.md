@@ -87,6 +87,10 @@ npm run lint     # eslint .
 npm run test     # vitest run
 ```
 
+## CI
+
+Opening a pull request runs the full check suite — audit, lint, unit tests, build, bundle budget, the Playwright acceptance suite and Lighthouse. The same list runs again on a push to `main` before the deploy, because both triggers call the same `.github/workflows/checks.yml`. See [`docs/ci.md`](docs/ci.md).
+
 ## Deployment
 
 Pushing to `main` automatically builds and publishes the site via `.github/workflows/deploy-pages.yml` (GitHub Actions → GitHub Pages). The base path is fixed in `vite.config.ts` (`/devops-interview-web/`), and the SPA fallback is a copy of `index.html` written to `404.html` during the build step.
