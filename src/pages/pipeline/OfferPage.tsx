@@ -43,30 +43,24 @@ export default function OfferPage() {
   if (!reachable) return null
 
   return (
-    <main
-      style={{
-        position: 'relative',
-        minHeight: '100vh',
-        padding: '2rem',
-        paddingTop: '4.5rem',
-        maxWidth: 640,
-        margin: '0 auto',
-        background: '#16171d',
-        color: '#f3f4f6',
-      }}
-    >
-      <LanguageSwitcher />
-      <PageNav />
+    <main className="page">
+      <div className="page__chrome">
+        <PageNav />
+        <LanguageSwitcher />
+      </div>
       <h1>{t('offer.title')}</h1>
       <p style={{ color: '#9ca3af' }}>{t('offer.subtitle')}</p>
 
       <pre
         style={{
           whiteSpace: 'pre-wrap',
+          // The signature block carries a LinkedIn URL, and a `pre` will happily
+          // let one unbroken token widen the page past the viewport.
+          overflowWrap: 'anywhere',
           background: '#1c1d23',
           border: '1px solid #2e303a',
           borderRadius: 12,
-          padding: '1.25rem',
+          padding: 'clamp(0.9rem, 4vw, 1.25rem)',
           fontFamily: 'inherit',
           lineHeight: 1.6,
         }}
@@ -74,7 +68,7 @@ export default function OfferPage() {
         {letterText}
       </pre>
 
-      <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.75rem', marginTop: '1rem' }}>
         <button onClick={handleCopy}>{copied ? t('offer.copied') : t('offer.copy')}</button>
         <Link to="/pipeline" style={{ color: '#c084fc', alignSelf: 'center' }}>
           {t('offer.backToPipeline')}

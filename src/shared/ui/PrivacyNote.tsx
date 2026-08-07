@@ -47,6 +47,9 @@ export function PrivacyNote({ dismissible = false }: PrivacyNoteProps) {
       style={{
         display: 'flex',
         alignItems: 'flex-start',
+        // The dismiss button drops to its own line rather than squeezing the
+        // note down to two words per row on a phone.
+        flexWrap: 'wrap',
         gap: '0.75rem',
         padding: '0.7rem 0.9rem',
         borderRadius: 12,
@@ -60,7 +63,7 @@ export function PrivacyNote({ dismissible = false }: PrivacyNoteProps) {
       <span aria-hidden="true" style={{ fontSize: 16, lineHeight: 1.2 }}>
         🔒
       </span>
-      <p style={{ margin: 0, flex: 1 }}>{t('privacy.note', { days: RETENTION_DAYS })}</p>
+      <p style={{ margin: 0, flex: '1 1 14rem' }}>{t('privacy.note', { days: RETENTION_DAYS })}</p>
       {dismissible && (
         <button
           onClick={acknowledge}

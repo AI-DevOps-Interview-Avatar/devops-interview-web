@@ -41,12 +41,16 @@ export default function SplashPage() {
         position: 'relative',
         display: 'grid',
         placeItems: 'center',
-        height: '100vh',
+        minHeight: '100svh',
+        padding: 'var(--gutter)',
         background: '#16171d',
         color: '#f3f4f6',
       }}
     >
-      <LanguageSwitcher />
+      {/* No PageNav here — the splash forwards itself to /interview. */}
+      <div style={{ position: 'absolute', top: 16, right: 16 }}>
+        <LanguageSwitcher />
+      </div>
       <div style={{ textAlign: 'center' }}>
         <h1>{t('splash.title')}</h1>
         <p>{t('splash.loading', { progress })}</p>

@@ -23,7 +23,9 @@ export function PageNav({ backTo, onBeforeNavigate }: PageNavProps) {
   }
 
   return (
-    <div style={{ display: 'flex', gap: 8, position: 'absolute', top: 16, left: 16, zIndex: 10 }}>
+    // Positioning belongs to whoever places it — .page__chrome in the flow,
+    // .meet-chrome overlaid on the video tile.
+    <div className="page-nav">
       {backTo && backTo !== HOME_PATH && (
         <button className="nav-pill" onClick={() => go(backTo)}>
           <span aria-hidden="true">⬆</span> {t('nav.back')}

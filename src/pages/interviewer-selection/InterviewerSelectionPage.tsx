@@ -21,21 +21,16 @@ export default function InterviewerSelectionPage() {
   const { t } = useTranslation()
 
   return (
-    <main
-      style={{
-        position: 'relative',
-        minHeight: '100vh',
-        padding: '2rem',
-        background: 'linear-gradient(180deg, #070b14 0%, #0b1220 60%, #070b14 100%)',
-        color: '#f3f4f6',
-        overflow: 'hidden',
-      }}
-    >
+    <main className="page page--hero">
       <HeroBackground />
-      <LanguageSwitcher />
 
-      <div style={{ position: 'relative', zIndex: 1 }}>
-        <header style={{ marginBottom: '1.5rem' }}>
+      <div className="page__inner">
+        {/* Home is this screen, so the chrome carries the switcher alone. */}
+        <div className="page__chrome">
+          <LanguageSwitcher />
+        </div>
+
+        <header className="page__header">
           <h1 style={{ margin: 0 }}>{t('selection.title')}</h1>
           <p style={{ color: '#9ca3af' }}>{t('selection.subtitle')}</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', marginTop: '0.75rem' }}>
@@ -54,13 +49,7 @@ export default function InterviewerSelectionPage() {
           <PrivacyNote dismissible />
         </div>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-            gap: '1rem',
-          }}
-        >
+        <div className="card-grid">
           {INTERVIEWERS.map((interviewer) => (
             <button
               key={interviewer.id}
@@ -75,7 +64,7 @@ export default function InterviewerSelectionPage() {
                 flexDirection: 'column',
                 gap: '0.75rem',
                 alignItems: 'flex-start',
-                padding: '1.25rem',
+                padding: 'clamp(0.9rem, 4vw, 1.25rem)',
                 textAlign: 'left',
                 cursor: 'pointer',
                 color: 'inherit',

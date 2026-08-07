@@ -60,8 +60,14 @@ The split that does earn its keep:
 | Localization | `localization.spec.ts` | mid-interview switch stops and re-speaks; whole transcript re-renders; persona keeps its gender across the switch; seven screens fully translated with no raw keys; session speaks Ukrainian in both senses |
 | Pipeline | `pipeline.spec.ts` | locked stage unreachable by URL; completion unlocks exactly the next; offer reachable at the end; a stage start-to-summary; progress survives a reload |
 | Shell | `shell.spec.ts` | four avatars drawing; clean console; no CDN request on any screen; WASM from our own origin; cold deep link into a session |
+| Responsive & a11y | `responsive.spec.ts` | no horizontal scroll on seven routes × six widths; persona grid inside a 320px phone; five pipeline stages plus the offer on phone/tablet/desktop; 44px toolbar targets with the stubs hidden; Back/Home never over the language switcher; captions and mic named, focusable and keyboard-operable; AA contrast on every run of text, and on all three stage-card states |
 
-Two of those exist because of production incidents. `img-src` without `blob:`
+Four of the responsive assertions failed against the layout that preceded
+DIA-161: the 320px sweep, the chrome overlap, the focus ring, and the contrast
+of a locked stage card — which was the unlocked one at `opacity: 0.5`, taking
+its own text to 2.9:1.
+
+Two other scenarios exist because of production incidents. `img-src` without `blob:`
 left two of four rigs as empty circles (DIA-173), and the Rive runtime was
 fetched from unpkg on a page holding camera permission (DIA-181). Both were
 invisible to the build and to every unit test; both were found by a person

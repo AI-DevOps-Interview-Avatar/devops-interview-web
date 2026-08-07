@@ -22,22 +22,13 @@ export default function DevelopersPage() {
   const { t } = useTranslation()
 
   return (
-    <main
-      style={{
-        position: 'relative',
-        minHeight: '100vh',
-        padding: '2rem',
-        paddingTop: '4.5rem',
-        maxWidth: 760,
-        margin: '0 auto',
-        background: '#16171d',
-        color: '#f3f4f6',
-      }}
-    >
-      <LanguageSwitcher />
-      <PageNav />
+    <main className="page page--wide">
+      <div className="page__chrome">
+        <PageNav />
+        <LanguageSwitcher />
+      </div>
 
-      <header style={{ marginBottom: '1.5rem' }}>
+      <header className="page__header">
         <h1 style={{ margin: 0 }}>{t('developers.title')}</h1>
         <p style={{ color: '#9ca3af' }}>{t('developers.subtitle')}</p>
       </header>
@@ -54,15 +45,18 @@ export default function DevelopersPage() {
               ...ACCENT_STYLE,
               display: 'flex',
               alignItems: 'center',
+              // A LinkedIn URL is wider than a 320px card; it wraps under the
+              // name instead of pushing the row off-screen.
+              flexWrap: 'wrap',
               gap: '0.75rem',
-              padding: '1rem 1.25rem',
+              padding: 'clamp(0.75rem, 3vw, 1.25rem)',
               textDecoration: 'none',
               color: 'inherit',
             }}
           >
             <span style={{ fontSize: 22 }}>{link.icon}</span>
             <span style={{ fontWeight: 700 }}>{link.name}</span>
-            <span style={{ marginLeft: 'auto', color: '#9ca3af', fontSize: 13 }}>
+            <span style={{ marginLeft: 'auto', color: '#9ca3af', fontSize: 13, overflowWrap: 'anywhere' }}>
               {link.url.replace(/^https?:\/\//, '')}
             </span>
           </a>
