@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { checkScores, ROUTES, THRESHOLDS } from './lighthouseGate.mjs'
+import { checkScores, ROUTES, THRESHOLDS, thresholdsFor } from './lighthouseGate.mjs'
 
 /** A run that clears every threshold, used as the base for each breach below. */
 const passing = [
@@ -52,5 +52,30 @@ describe('checkScores', () => {
   it('measures the routes a candidate actually lands on', () => {
     expect(ROUTES).toContain('/')
     expect(ROUTES.every((route) => route.startsWith('/'))).toBe(true)
+  })
+})
+
+describe('thresholdsFor', () => {
+  it('enforces all four categories on CI', () => {
+    expect(thresholdsFor({ CI: 'true' })).toEqual(THRESHOLDS)
+  })
+
+  it('drops performance off a developer machine, keeping the deterministic three', () => {
+    // A laptop scores 50-60 on the avatar screens where the runner scores
+    // 86-88, so the CI floor would be red locally on every single run.
+    const local = thresholdsFor({})
+
+    expect(local.performance).toBeUndefined()
+    expect(local).toEqual({ accessibility: 1, 'best-practices': 1, seo: 1 })
+  })
+
+  it('still fails a local run on an accessibility regression', () => {
+    // The point of dropping performance is that it is hardware-dependent, not
+    // that local runs stop gating anything.
+    const runs = [{ url: '/', scores: { performance: 0.5, accessibility: 0.9, 'best-practices': 1, seo: 1 } }]
+
+    const failures = checkScores(runs, thresholdsFor({}))
+    expect(failures).toHaveLength(1)
+    expect(failures[0]).toContain('accessibility')
   })
 })
