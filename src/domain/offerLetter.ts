@@ -13,6 +13,22 @@ export interface OfferLetter {
 const PLACEHOLDER = '—'
 
 /**
+ * The one real-world detail in an otherwise mock letter: who a candidate talks
+ * to once the practice pipeline ends.
+ *
+ * It lives here rather than in the two locale files because none of it is
+ * translatable. The name is a real person's and has to match the profile the
+ * link points at, and a URL duplicated across `en/` and `ua/` is a URL that
+ * disagrees with itself the first time one copy is edited. The locales carry
+ * only the sentence around it.
+ */
+export const HIRING_CONTACT = {
+  name: 'Danylo Nishimatsu',
+  linkedIn: 'https://www.linkedin.com/in/d-nishimatsu/',
+  company: 'Brewly Store',
+} as const
+
+/**
  * Fills offer-letter placeholders from what Stage 1 (Emma) captured.
  *
  * Every field, the name included, comes from `profile` — the candidate is asked

@@ -132,7 +132,7 @@
     "copy": "Copy letter",
     "copied": "Copied!",
     "backToPipeline": "← Back to pipeline",
-    "letterBody": "Dear {{candidateName}},\n\nCongratulations! We are pleased to offer you the {{position}} position, based on your compensation range of {{salaryExpectations}} and a start date aligned with a notice period of {{noticePeriod}}. We understand you are based in {{location}}.\n\nThis is a mock offer letter generated from your Stage 1 screening answers — no automated skill grading is involved (see DIA-84).\n\nWelcome aboard!"
+    "letterBody": "Dear {{candidateName}},\n\nCongratulations! We are pleased to offer you the {{position}} position, based on your compensation range of {{salaryExpectations}} and a start date aligned with a notice period of {{noticePeriod}}. We understand you are based in {{location}}.\n\nThis is a mock offer letter generated from your Stage 1 screening answers — no automated skill grading is involved (see DIA-84).\n\nWelcome aboard!\n\nFor the next step, please contact Project Manager {{contactName}}:\n{{contactLinkedIn}}\n\n{{company}}"
   },
   "practice": {
     "title": "Practice & Self-Prep",
