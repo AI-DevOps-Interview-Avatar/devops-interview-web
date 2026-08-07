@@ -4,6 +4,17 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      Static, and in English, unlike everything the app renders. It is read by
+      crawlers and link previews before React or i18next exist, so a key like
+      `meta.description` would be shared verbatim as the literal string. The
+      `<html lang>` attribute is a different case and is corrected at runtime
+      once the language is known — see src/shared/lib/htmlLang.ts.
+    -->
+    <meta
+      name="description"
+      content="Practise DevOps interviews with four AI personas: recruiter screening, technical rounds, live coding and a culture-fit interview. Runs entirely in your browser — nothing is sent to a server."
+    />
     <title>DevOps Interview AI — Web</title>
   </head>
   <body>
