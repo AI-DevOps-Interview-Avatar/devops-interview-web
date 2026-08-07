@@ -8,12 +8,27 @@ import { LanguageSwitcher } from '../../shared/ui/LanguageSwitcher'
 import { PageNav } from '../../shared/ui/PageNav'
 import type { RootState } from '../../store'
 
+type StageStatus = 'completed' | 'unlocked' | 'locked'
+
+/** Every pair below clears 4.5:1 against its own surface — see DIA-161. */
+const STAGE_SURFACE: Record<StageStatus, string> = {
+  completed: '#1f2e22',
+  unlocked: '#2a2b33',
+  locked: '#212229',
+}
+
+const STAGE_STATUS_COLOR: Record<StageStatus, string> = {
+  completed: '#4CAF50',
+  unlocked: '#c084fc',
+  locked: '#9ca3af',
+}
+
 export default function PipelineHomePage() {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { completedStages } = useSelector((state: RootState) => state.pipeline)
 
-  function statusFor(stageIndex: number): 'completed' | 'unlocked' | 'locked' {
+  function statusFor(stageIndex: number): StageStatus {
     if (completedStages.includes(stageIndex)) return 'completed'
     if (canEnterStage(completedStages, stageIndex)) return 'unlocked'
     return 'locked'
@@ -25,25 +40,18 @@ export default function PipelineHomePage() {
   }
 
   return (
-    <main
-      style={{
-        position: 'relative',
-        minHeight: '100vh',
-        padding: '2rem',
-        paddingTop: '4.5rem',
-        background: '#16171d',
-        color: '#f3f4f6',
-      }}
-    >
-      <LanguageSwitcher />
-      <PageNav />
+    <main className="page">
+      <div className="page__chrome">
+        <PageNav />
+        <LanguageSwitcher />
+      </div>
 
-      <header style={{ marginBottom: '1.5rem' }}>
+      <header className="page__header">
         <h1 style={{ margin: 0 }}>{t('pipeline.home.title')}</h1>
         <p style={{ color: '#9ca3af' }}>{t('pipeline.home.subtitle')}</p>
       </header>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxWidth: 640 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
         {PIPELINE_STAGES.map((stage, index) => {
           const interviewer = stage.interviewerId ? INTERVIEWERS.find((i) => i.id === stage.interviewerId) : null
           const status = statusFor(index)
@@ -59,15 +67,19 @@ export default function PipelineHomePage() {
               style={{
                 display: 'flex',
                 alignItems: 'center',
+                flexWrap: 'wrap',
                 gap: '1rem',
                 borderRadius: 16,
-                padding: '1rem 1.25rem',
+                padding: 'clamp(0.75rem, 3vw, 1.25rem)',
                 textAlign: 'left',
                 cursor: status === 'locked' ? 'not-allowed' : 'pointer',
-                background: status === 'completed' ? '#1f2e22' : '#2a2b33',
+                // A locked card used to be the unlocked one at `opacity: 0.5`,
+                // which dropped its own text to 2.9:1 against the page. Muting
+                // the surface instead of the whole card keeps it legible while
+                // still reading as out of reach.
+                background: STAGE_SURFACE[status],
                 border: `1px solid ${status === 'completed' ? '#4CAF50' : '#383944'}`,
                 color: 'inherit',
-                opacity: status === 'locked' ? 0.5 : 1,
               }}
             >
               {interviewer ? (
@@ -77,6 +89,7 @@ export default function PipelineHomePage() {
                   style={{
                     width: 56,
                     height: 56,
+                    flexShrink: 0,
                     borderRadius: '50%',
                     display: 'grid',
                     placeItems: 'center',
@@ -88,7 +101,7 @@ export default function PipelineHomePage() {
                   🎉
                 </div>
               )}
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: '1 1 8rem', minWidth: 0 }}>
                 <p style={{ margin: 0, fontSize: 13, color: '#9ca3af' }}>
                   {t('pipeline.stageLabel', { number: index + 1 })}
                 </p>
@@ -97,9 +110,10 @@ export default function PipelineHomePage() {
               </div>
               <span
                 style={{
+                  marginLeft: 'auto',
                   fontSize: 13,
                   fontWeight: 600,
-                  color: status === 'completed' ? '#4CAF50' : status === 'unlocked' ? '#c084fc' : '#6b7280',
+                  color: STAGE_STATUS_COLOR[status],
                 }}
               >
                 {t(`pipeline.status.${status}`)}

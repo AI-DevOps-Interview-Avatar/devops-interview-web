@@ -1,5 +1,5 @@
 import { useRive, Layout, Fit, Alignment } from '@rive-app/react-canvas'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import type { InterviewerProfile } from '../../domain/models/InterviewerProfile'
 import { getCachedRiveBuffer, loadRiveBuffer, riveAssetUrl } from './riveBufferCache'
 import { initRiveRuntime } from './riveRuntime'
@@ -26,7 +26,12 @@ const SPEAK_INPUT = 'speak'
 interface AvatarTileProps {
   interviewer: InterviewerProfile
   isSpeaking: boolean
-  size?: number
+  /**
+   * Pixels, or any CSS length. The session passes a `min(...)` expression so
+   * the tile shrinks with the viewport instead of pushing the toolbar off a
+   * phone in landscape; the card screens pass a fixed number.
+   */
+  size?: number | string
 }
 
 export function AvatarTile({ interviewer, isSpeaking, size = 320 }: AvatarTileProps) {
@@ -62,13 +67,21 @@ function AvatarCanvas({
     }
   }, [src, buffer])
 
+  // Carried as a custom property so the placeholder's font size can be derived
+  // from it in CSS — `size * 0.34` only works while `size` is a number.
+  const sizing = {
+    ['--avatar-size' as string]: typeof size === 'number' ? `${size}px` : size,
+  } as CSSProperties
+
   return (
     <div
       data-testid="avatar"
       data-interviewer-id={interviewer.id}
       style={{
-        width: size,
-        height: size,
+        ...sizing,
+        width: 'var(--avatar-size)',
+        height: 'var(--avatar-size)',
+        flexShrink: 0,
         borderRadius: '50%',
         overflow: 'hidden',
         border: `3px solid ${interviewer.color}`,
@@ -90,7 +103,7 @@ function AvatarCanvas({
             inset: 0,
             display: 'grid',
             placeItems: 'center',
-            fontSize: size * 0.34,
+            fontSize: 'calc(var(--avatar-size) * 0.34)',
             fontWeight: 700,
             color: interviewer.color,
             opacity: 0.35,

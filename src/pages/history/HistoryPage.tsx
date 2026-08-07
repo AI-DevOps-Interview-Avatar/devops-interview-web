@@ -28,20 +28,11 @@ export default function HistoryPage() {
   }
 
   return (
-    <main
-      style={{
-        position: 'relative',
-        minHeight: '100vh',
-        padding: '2rem',
-        paddingTop: '4.5rem',
-        maxWidth: 640,
-        margin: '0 auto',
-        background: '#16171d',
-        color: '#f3f4f6',
-      }}
-    >
-      <LanguageSwitcher />
-      <PageNav />
+    <main className="page">
+      <div className="page__chrome">
+        <PageNav />
+        <LanguageSwitcher />
+      </div>
       <h1>{t('history.title')}</h1>
       <div style={{ margin: '1rem 0 1.25rem' }}>
         <PrivacyNote />

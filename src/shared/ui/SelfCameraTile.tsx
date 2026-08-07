@@ -48,8 +48,10 @@ export function SelfCameraTile({ active }: SelfCameraTileProps) {
         position: 'absolute',
         bottom: 12,
         right: 12,
-        width: 96,
-        height: 96,
+        // A fixed 96px tile is a third of a 320px screen; it scales down with
+        // the viewport and stops growing once there is room for the full size.
+        width: 'clamp(72px, 22vw, 96px)',
+        height: 'clamp(72px, 22vw, 96px)',
         borderRadius: 12,
         objectFit: 'cover',
         background: '#000',

@@ -37,6 +37,13 @@ import {
 } from '../../shared/voice/stt'
 import type { RootState } from '../../store'
 
+/**
+ * Where overlays on the video tile start, in px from its top edge: clear of
+ * .meet-chrome (16px offset + a 44px tap target) plus a gap. They used to start
+ * at 24 and sat under Back/Home once the chrome grew to a real touch size.
+ */
+const OVERLAY_TOP = 72
+
 export default function MeetSessionPage() {
   const params = useParams<{ interviewerId?: string; stageIndex?: string }>()
   const navigate = useNavigate()
@@ -362,8 +369,10 @@ export default function MeetSessionPage() {
   return (
     <main className="meet-shell">
       <section className="meet-main">
-        <LanguageSwitcher />
-        <PageNav onBeforeNavigate={leaveSession} />
+        <div className="meet-chrome">
+          <PageNav onBeforeNavigate={leaveSession} />
+          <LanguageSwitcher />
+        </div>
 
         {/* Full-bleed video tile, Meet-style — no card border/padding around it. */}
         <div
@@ -404,7 +413,9 @@ export default function MeetSessionPage() {
             />
           ) : (
             <div style={{ textAlign: 'center' }}>
-              <AvatarTile interviewer={interviewer} isSpeaking={speaking} size={280} />
+              {/* Was a flat 280px, which on a phone in landscape left no room
+                  for the toolbar under it. Bounded by both axes now. */}
+              <AvatarTile interviewer={interviewer} isSpeaking={speaking} size="min(280px, 70vw, 45vh)" />
               <p style={{ marginTop: '0.75rem', fontWeight: 600 }}>{interviewer.voiceName}</p>
             </div>
           )}
@@ -416,7 +427,7 @@ export default function MeetSessionPage() {
           {/* Sits below the mic error so both can be true at once — a machine
               with no Ukrainian voice pack often has no microphone either. */}
           {!finished && voiceUnavailable && (
-            <AlertBanner testId="voice-unavailable" tone="warning" top={micError ? 76 : 24}>
+            <AlertBanner testId="voice-unavailable" tone="warning" top={micError ? OVERLAY_TOP + 52 : OVERLAY_TOP}>
               {t('meet.controls.voiceUnavailable')}
             </AlertBanner>
           )}
@@ -428,7 +439,7 @@ export default function MeetSessionPage() {
               data-testid="recording-status"
               style={{
                 position: 'absolute',
-                top: 24,
+                top: OVERLAY_TOP,
                 left: '50%',
                 transform: 'translateX(-50%)',
                 display: 'flex',
@@ -464,9 +475,14 @@ export default function MeetSessionPage() {
               data-testid="caption"
               style={{
                 position: 'absolute',
-                bottom: 24,
-                left: 24,
-                right: 24,
+                bottom: 'clamp(12px, 3vw, 24px)',
+                left: 'clamp(12px, 4vw, 24px)',
+                right: 'clamp(12px, 4vw, 24px)',
+                // A long question in Ukrainian is several lines on a phone; the
+                // caption scrolls inside its own box rather than growing up
+                // over the avatar.
+                maxHeight: '35%',
+                overflowY: 'auto',
                 textAlign: 'center',
                 background: 'rgba(0,0,0,0.6)',
                 padding: '0.6rem 1rem',
@@ -605,7 +621,16 @@ export default function MeetSessionPage() {
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 placeholder={t('meet.sendPlaceholder') ?? ''}
                 disabled={Boolean(streaming)}
-                style={{ flex: 1, padding: '0.5rem', borderRadius: 8, border: '1px solid #383944', background: '#1c1d23', color: 'inherit' }}
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  minHeight: 'var(--tap-target)',
+                  padding: '0.5rem',
+                  borderRadius: 8,
+                  border: '1px solid #383944',
+                  background: '#1c1d23',
+                  color: 'inherit',
+                }}
               />
               <button data-testid="send" onClick={handleSend} disabled={Boolean(streaming)}>
                 {t('meet.send')}
@@ -644,8 +669,12 @@ function AssessmentCard({
         background: '#1c1d23',
         border: '1px solid #2e303a',
         borderRadius: 16,
-        padding: '1.5rem',
-        width: 'min(90%, 420px)',
+        padding: 'clamp(1rem, 4vw, 1.5rem)',
+        width: 'min(92%, 420px)',
+        // The tile clips its overflow, so on a short screen the card has to
+        // scroll itself or its CTA becomes unreachable.
+        maxHeight: '100%',
+        overflowY: 'auto',
         textAlign: 'left',
       }}
     >
@@ -708,7 +737,7 @@ function AlertBanner({
   children,
   testId,
   tone = 'error',
-  top = 24,
+  top = OVERLAY_TOP,
 }: {
   children: React.ReactNode
   /** Stable hook for tests: the copy inside is localized, and half of them switch locale. */

@@ -14,22 +14,13 @@ export default function ResumeReviewPage() {
   const result = useMemo(() => reviewResume(text), [text])
 
   return (
-    <main
-      style={{
-        position: 'relative',
-        minHeight: '100vh',
-        padding: '2rem',
-        paddingTop: '4.5rem',
-        maxWidth: 760,
-        margin: '0 auto',
-        background: '#16171d',
-        color: '#f3f4f6',
-      }}
-    >
-      <LanguageSwitcher />
-      <PageNav />
+    <main className="page page--wide">
+      <div className="page__chrome">
+        <PageNav />
+        <LanguageSwitcher />
+      </div>
 
-      <header style={{ marginBottom: '1.5rem' }}>
+      <header className="page__header">
         <h1 style={{ margin: 0 }}>{t('resumeReview.title')}</h1>
         <p style={{ color: '#9ca3af' }}>{t('resumeReview.subtitle')}</p>
       </header>

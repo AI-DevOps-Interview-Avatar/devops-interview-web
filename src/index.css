@@ -3,6 +3,16 @@
   font: 16px/1.5 system-ui, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* One gutter drives the padding of every screen: 16px of breathing room on a
+     320px phone, 32px once there is room for it. The pages used to hardcode
+     `padding: 2rem`, which left a 320px viewport with 256px of usable width. */
+  --gutter: clamp(1rem, 4vw, 2rem);
+  /* Reading column. Overridden per page by .page--wide / .page--hero. */
+  --page-max: 640px;
+  /* WCAG 2.2 target size (minimum) — every control clears it, phone included. */
+  --tap-target: 44px;
+  --focus-ring: #00c2ff;
 }
 
 * {
@@ -20,13 +30,15 @@ body {
 }
 
 h1 {
-  font-size: 28px;
+  /* 24px on a phone, 28px from tablet up — headings were the one thing that
+     never shrank, and on 320px they took three lines of a five-word title. */
+  font-size: clamp(1.5rem, 1.15rem + 1.6vw, 1.75rem);
   font-weight: 600;
   margin: 0 0 4px;
 }
 
 h2 {
-  font-size: 18px;
+  font-size: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
   font-weight: 600;
   margin: 0 0 4px;
 }
@@ -37,12 +49,107 @@ p {
 
 button {
   font: inherit;
+  min-height: var(--tap-target);
+}
+
+/* Keyboard users had nothing: the browser default outline is suppressed by the
+   dark palette on most of these controls, and none of them drew their own. */
+:where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* ---------- Page shell ----------
+   Every screen but the session used to repeat the same inline object:
+   `minHeight: 100vh, padding: 2rem, paddingTop: 4.5rem, maxWidth: 640|760`.
+   The 4.5rem was clearance for Home/Back and the language switcher, which were
+   absolutely positioned in the top corners and overlapped each other on a
+   narrow phone. They sit in the flow now, in .page__chrome, so they wrap
+   instead of colliding and the reserved band disappears with them. */
+
+.page {
+  position: relative;
+  /* svh, not vh: mobile Safari's vh is the *expanded* viewport, so a screen
+     sized to it hides its last row behind the retracted URL bar. */
+  min-height: 100svh;
+  width: 100%;
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: var(--gutter);
+  padding-bottom: calc(var(--gutter) + env(safe-area-inset-bottom, 0px));
+  color: #f3f4f6;
+}
+
+.page--wide {
+  --page-max: 760px;
+}
+
+/* Full-bleed background, content still held to a readable width by
+   .page__inner — otherwise four persona cards stretch across 1920px. */
+.page--hero {
+  --page-max: none;
+  background: linear-gradient(180deg, #070b14 0%, #0b1220 60%, #070b14 100%);
+  overflow: hidden;
+}
+
+.page__inner {
+  position: relative;
+  z-index: 1;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.page__chrome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.page__header {
+  margin-bottom: 1.5rem;
+}
+
+.page-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lang-switcher {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.lang-switcher__btn {
+  min-width: var(--tap-target);
+  min-height: var(--tap-target);
+  border-radius: 8px;
+  border: 1px solid #444;
+  background: transparent;
+  color: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* The pressed state is the selected language — driven off the ARIA attribute
+   that already carries it rather than a second source of truth in JS. */
+.lang-switcher__btn[aria-pressed='true'] {
+  background: #c084fc;
+  border-color: #c084fc;
+  color: #1c1d23;
 }
 
 .nav-pill {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.4rem;
+  min-height: var(--tap-target);
   padding: 0.55rem 1.1rem;
   border-radius: 999px;
   border: 1px solid #383944;
@@ -219,6 +326,15 @@ button {
   border: 1px solid var(--accent);
 }
 
+/* `min(260px, 100%)` rather than a bare 260px: auto-fit honours the minimum
+   even when the container is narrower than it, so a plain minmax(260px, 1fr)
+   overflowed the 288px of content a 320px phone has left after the gutters. */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  gap: 1rem;
+}
+
 /* ---------- Responsive breakpoints (mobile-first) ----------
    Mobile:  < 640px    (base rules below, no media query needed)
    Tablet:  640–1023px (min-width: 640px)
@@ -243,6 +359,20 @@ button {
 .control-btn--wide {
   width: 84px;
   border-radius: 24px;
+}
+
+/* Below 360px the functional bar still wraps to two rows at 48px. Trimming to
+   the 44px floor keeps it on one, which is the difference between a toolbar
+   and a toolbar plus a scrollbar. */
+@media (max-width: 359px) {
+  .control-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .control-btn--wide {
+    width: 72px;
+  }
 }
 
 /* Present/More/Info/People are permanently-disabled stub controls in this
@@ -275,6 +405,28 @@ button {
   display: flex;
   flex-direction: column;
   min-width: 0;
+}
+
+/* The session is the one screen with no page flow to put the chrome in — it is
+   a full-bleed video tile. Same two corners as .page__chrome, but overlaid,
+   and as a single wrapping row so Back/Home can never land on top of EN/UA. */
+.meet-chrome {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  z-index: 10;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  /* The row spans the tile; only the controls in it should swallow clicks. */
+  pointer-events: none;
+}
+
+.meet-chrome > * {
+  pointer-events: auto;
 }
 
 .meet-toolbar {
