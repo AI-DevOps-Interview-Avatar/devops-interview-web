@@ -12,7 +12,6 @@ export default function OfferPage() {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { completedStages, candidateProfile } = useSelector((state: RootState) => state.pipeline)
-  const [candidateName, setCandidateName] = useState('')
   const [copied, setCopied] = useState(false)
 
   const reachable = canEnterStage(completedStages, OFFER_STAGE_INDEX)
@@ -21,7 +20,7 @@ export default function OfferPage() {
     if (!reachable) navigate('/pipeline')
   }, [reachable, navigate])
 
-  const offer = useMemo(() => generateOfferLetter(candidateProfile, candidateName), [candidateProfile, candidateName])
+  const offer = useMemo(() => generateOfferLetter(candidateProfile), [candidateProfile])
 
   const letterText = t('offer.letterBody', {
     candidateName: offer.candidateName,
@@ -57,16 +56,6 @@ export default function OfferPage() {
       <PageNav />
       <h1>{t('offer.title')}</h1>
       <p style={{ color: '#9ca3af' }}>{t('offer.subtitle')}</p>
-
-      <label style={{ display: 'block', margin: '1rem 0' }}>
-        <span style={{ display: 'block', marginBottom: 4, fontSize: 14 }}>{t('offer.nameLabel')}</span>
-        <input
-          value={candidateName}
-          onChange={(e) => setCandidateName(e.target.value)}
-          placeholder={t('offer.namePlaceholder') ?? ''}
-          style={{ width: '100%', padding: '0.5rem', borderRadius: 8, border: '1px solid #383944', background: '#1c1d23', color: 'inherit' }}
-        />
-      </label>
 
       <pre
         style={{

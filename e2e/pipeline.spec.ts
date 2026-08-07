@@ -41,6 +41,40 @@ test.describe('pipeline gating', () => {
   })
 })
 
+// DIA-135: the name is asked by Emma at Stage 1 like every other detail, so by
+// the time the offer exists there is nothing left to fill in by hand.
+test.describe('the offer letter is addressed from Stage 1', () => {
+  test('greets the candidate by the name screening captured', async ({ page }) => {
+    await installSpeechStub(page, { voices: 'chrome' })
+    await seedLanguage(page, 'en')
+    await seedPipelineProgress(page, [0, 1, 2, 3], { candidateName: 'Jane Doe', salaryExpectations: '$4500' })
+
+    await page.goto('pipeline/offer')
+    await expect(page.locator('pre')).toContainText('Dear Jane Doe')
+    await expect(page.locator('pre')).toContainText('$4500')
+  })
+
+  test('no longer asks for a name it already has', async ({ page }) => {
+    await installSpeechStub(page, { voices: 'chrome' })
+    await seedLanguage(page, 'en')
+    await seedPipelineProgress(page, [0, 1, 2, 3], { candidateName: 'Jane Doe' })
+
+    await page.goto('pipeline/offer')
+    await expect(page.locator('pre')).toContainText('Dear Jane Doe')
+    await expect(page.locator('input')).toHaveCount(0)
+  })
+
+  test('falls back to a placeholder rather than "Dear undefined" for a pre-DIA-135 profile', async ({ page }) => {
+    await installSpeechStub(page, { voices: 'chrome' })
+    await seedLanguage(page, 'en')
+    await seedPipelineProgress(page, [0, 1, 2, 3], { salaryExpectations: '$4500' })
+
+    await page.goto('pipeline/offer')
+    await expect(page.locator('pre')).toContainText('Dear —')
+    await expect(page.locator('pre')).not.toContainText('undefined')
+  })
+})
+
 test.describe('a stage from start to summary', () => {
   // Every question of a stage, answered one by one — minutes of streamed
   // tokens, not seconds.

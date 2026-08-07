@@ -2,18 +2,36 @@ import { expect, type Page } from '@playwright/test'
 
 /** Shared moves for driving an interview, so the specs read as scenarios rather than selectors. */
 
-/** Seeds pipeline progress so a test can start at the stage it is about, instead of walking there. */
-export async function seedPipelineProgress(page: Page, completedStages: number[]): Promise<void> {
-  await page.addInitScript((stages: number[]) => {
-    // Init scripts run on every navigation, so writing unconditionally would
-    // undo the progress the app itself saved a moment earlier — and a test for
-    // "progress survives a reload" would be testing the seed instead.
-    if (localStorage.getItem('devops-interview-web:pipeline')) return
-    localStorage.setItem(
-      'devops-interview-web:pipeline',
-      JSON.stringify({ completedStages: stages, candidateProfile: {}, savedAt: new Date().toISOString() }),
-    )
-  }, completedStages)
+/**
+ * Seeds pipeline progress so a test can start at the stage it is about, instead
+ * of walking there.
+ *
+ * `profile` stands in for what Stage 1 captured. Reaching the offer page the
+ * honest way means answering 42 screening questions, so a test about the letter
+ * seeds the answers rather than dictating them.
+ */
+export async function seedPipelineProgress(
+  page: Page,
+  completedStages: number[],
+  profile: Record<string, string> = {},
+): Promise<void> {
+  await page.addInitScript(
+    (seed: { stages: number[]; profile: Record<string, string> }) => {
+      // Init scripts run on every navigation, so writing unconditionally would
+      // undo the progress the app itself saved a moment earlier — and a test for
+      // "progress survives a reload" would be testing the seed instead.
+      if (localStorage.getItem('devops-interview-web:pipeline')) return
+      localStorage.setItem(
+        'devops-interview-web:pipeline',
+        JSON.stringify({
+          completedStages: seed.stages,
+          candidateProfile: seed.profile,
+          savedAt: new Date().toISOString(),
+        }),
+      )
+    },
+    { stages: completedStages, profile },
+  )
 }
 
 /** Forces the interface language before the app boots, the way a returning visitor's stored choice would. */
