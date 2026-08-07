@@ -40,6 +40,11 @@ jobs:
       # are all invisible to the steps above. Chromium only — see docs/e2e.md.
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+      # What the browser makes of the bundle, as opposed to how big it is:
+      # accessibility, best practices and SEO are gated at 100, performance at
+      # a floor while DIA-201 is open. Reuses the Chromium installed above —
+      # see docs/lighthouse.md.
+      - run: npm run lighthouse:ci
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()
         with:

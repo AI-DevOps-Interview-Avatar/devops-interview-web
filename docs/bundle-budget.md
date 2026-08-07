@@ -68,6 +68,11 @@ nothing is worse than none.
 
 ## Not covered here
 
-DIA-117 also asks for Lighthouse CI and an offline check. Neither is in this
-change: both need a real browser in the pipeline, which is its own piece of
-work. The size half of that ticket is what this budget answers.
+DIA-117 also asks for Lighthouse CI and an offline check. This budget answers
+the size half of that ticket; Lighthouse landed separately in
+`docs/lighthouse.md`, and it is worth reading next to this one — the build
+passes every budget above and still scores 48/100 on performance for the screens
+that draw avatars (DIA-201). Bytes and blocking are different problems.
+
+The offline check stays open, blocked on DIA-96/DIA-97: there is no model bundle
+to cache yet.
