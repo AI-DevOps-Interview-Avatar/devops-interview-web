@@ -1,0 +1,63 @@
+# Every check the project has, in one place, called from two triggers:
+# ci.yml on a pull request, and deploy-pages.yml on a push to main.
+#
+# It is a reusable workflow rather than two copies of the same step list
+# because two lists that must agree are exactly how this repository ended up
+# with checks that only ran after the merge (DIA-121). A copy would drift the
+# first time someone adds a step to one file.
+name: Checks
+
+on:
+  workflow_call:
+    inputs:
+      upload-pages-artifact:
+        description: >-
+          Package dist/ for GitHub Pages. Only the deploy caller needs this; a
+          pull request builds the same output and throws it away.
+        type: boolean
+        default: false
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Blocks on any high or critical advisory that is not written down in
+      # scripts/auditGate.mjs with a reason and a review date. Plain
+      # `npm audit --audit-level=high` cannot sit here: the one advisory we
+      # carry has no fixed release to move to, so it would fail every build.
+      - run: npm run audit:ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      # Vite's own chunk-size warning is only a line in this log, and the app
+      # sat past it for weeks. This one fails the build — see docs/bundle-budget.md.
+      - run: npm run bundle:budget
+      # The acceptance suite drives the production build in a real browser:
+      # CSP violations, avatars that fail to draw and speech that never stops
+      # are all invisible to the steps above. Chromium only — see docs/e2e.md.
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      # What the browser makes of the bundle, as opposed to how big it is.
+      # Actions sets CI, so this enforces performance too — the gate measures
+      # but does not enforce it anywhere else. See docs/lighthouse.md.
+      - run: npm run lighthouse:ci
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+      # Pages serves 404.html for any unknown path, which is how a client-side
+      # router survives a deep link or a refresh.
+      - run: cp dist/index.html dist/404.html
+        if: inputs.upload-pages-artifact
+      - uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        if: inputs.upload-pages-artifact
+        with:
+          path: dist
