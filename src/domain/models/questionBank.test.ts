@@ -34,6 +34,7 @@ describe('Marcus inherits the junior technical theory', () => {
 describe('Emma (recruiter) asks her screening script and nothing else', () => {
   /** The agreed script, in order. Changing the recruiter's questions means changing this list. */
   const SCRIPT = [
+    'stage1-name',
     'stage1-about',
     'stage1-last-project',
     'stage1-team-size',
@@ -98,8 +99,22 @@ describe('Emma (recruiter) asks her screening script and nothing else', () => {
   it('keeps every field the offer letter reads from Stage 1', () => {
     const captured = RECRUITER_STAGE1_QUESTIONS.flatMap((q) => (q.profileField ? [q.profileField] : []))
     expect(captured).toEqual(
-      expect.arrayContaining(['techStackOverview', 'location', 'salaryExpectations', 'noticePeriod']),
+      expect.arrayContaining([
+        'candidateName',
+        'techStackOverview',
+        'location',
+        'salaryExpectations',
+        'noticePeriod',
+      ]),
     )
+  })
+
+  // The offer letter opens with "Dear {{candidateName}}", so the one question
+  // that fills it has to be asked while the candidate is still in the room —
+  // and asking a stranger's name after twenty other questions reads as an
+  // afterthought. First, or it may as well have stayed on the offer page.
+  it('asks for the name first, so the offer letter is never addressed to a placeholder', () => {
+    expect(RECRUITER_STAGE1_QUESTIONS[0].profileField).toBe('candidateName')
   })
 })
 

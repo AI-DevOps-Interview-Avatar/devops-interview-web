@@ -129,8 +129,6 @@
   "offer": {
     "title": "Final Offer",
     "subtitle": "Auto-generated from your Stage 1 screening answers.",
-    "nameLabel": "Your name",
-    "namePlaceholder": "Jane Doe",
     "copy": "Copy letter",
     "copied": "Copied!",
     "backToPipeline": "← Back to pipeline",

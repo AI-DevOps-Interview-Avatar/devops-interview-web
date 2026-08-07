@@ -63,6 +63,39 @@ describe('pipelineSlice: candidate profile capture (feeds the Stage 5 offer lett
     expect(state.candidateProfile.location).toBe('Kyiv, Ukraine')
   })
 
+  // DIA-135: the name used to be typed into the offer page after the fact. It
+  // now rides the same capture path as salary and location, which means the
+  // offer letter is addressed correctly without the candidate doing anything
+  // beyond answering Emma's first question.
+  it('captures the candidate name from the opening question of the script', () => {
+    const nameIndex = RECRUITER_STAGE1_QUESTIONS.findIndex((q) => q.id === 'stage1-name')
+    const messages: ChatMessage[] = [
+      { author: 'interviewer', greeting: true },
+      { author: 'interviewer', questionIndex: nameIndex },
+      { author: 'user', text: 'Jane Doe' },
+    ]
+    const state = pipelineReducer(
+      initialState,
+      completeStage({ stageIndex: 0, selectedQuestions: RECRUITER_STAGE1_QUESTIONS, messages }),
+    )
+    expect(state.candidateProfile.candidateName).toBe('Jane Doe')
+  })
+
+  it('leaves the name unset when the candidate skipped the question, rather than storing the greeting', () => {
+    const nameIndex = RECRUITER_STAGE1_QUESTIONS.findIndex((q) => q.id === 'stage1-name')
+    const aboutIndex = RECRUITER_STAGE1_QUESTIONS.findIndex((q) => q.id === 'stage1-about')
+    const messages: ChatMessage[] = [
+      { author: 'interviewer', questionIndex: nameIndex },
+      { author: 'interviewer', questionIndex: aboutIndex },
+      { author: 'user', text: 'I have been doing DevOps for four years.' },
+    ]
+    const state = pipelineReducer(
+      initialState,
+      completeStage({ stageIndex: 0, selectedQuestions: RECRUITER_STAGE1_QUESTIONS, messages }),
+    )
+    expect(state.candidateProfile.candidateName).toBeUndefined()
+  })
+
   it('ignores questions without a profileField tag', () => {
     const motivationIndex = RECRUITER_STAGE1_QUESTIONS.findIndex((q) => q.id === 'stage1-motivation')
     const messages: ChatMessage[] = [

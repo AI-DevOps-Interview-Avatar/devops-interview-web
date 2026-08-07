@@ -2,7 +2,12 @@ import { STAGE3_TASKS } from './stage3Tasks'
 
 export type QuestionLevel = 'junior' | 'middle' | 'senior'
 
-export type CandidateProfileField = 'salaryExpectations' | 'noticePeriod' | 'location' | 'techStackOverview'
+export type CandidateProfileField =
+  | 'candidateName'
+  | 'salaryExpectations'
+  | 'noticePeriod'
+  | 'location'
+  | 'techStackOverview'
 
 export interface BankQuestion {
   id: string
@@ -1729,6 +1734,14 @@ export const CTO_QUESTIONS: BankQuestion[] = [
  * `questionBank.test.ts` enforces that.
  */
 export const RECRUITER_STAGE1_QUESTIONS: BankQuestion[] = [
+  {
+    id: 'stage1-name',
+    category: 'experience',
+    level: 'junior',
+    ua: 'Вітаю! Для початку — як до вас звертатися? Назвіть, будь ласка, ім\'я та прізвище.',
+    en: 'Hello! To start — how should I address you? Please tell me your first and last name.',
+    profileField: 'candidateName',
+  },
   {
     id: 'stage1-about',
     category: 'experience',
