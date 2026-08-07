@@ -14,6 +14,15 @@ Web version of **[DevOps Interview AI](https://github.com/AI-DevOps-Interview-Av
 |---|---|---|
 | ![Practice question bank with randomized question set for the Recruiter persona](screenshots/practice.jpg) | ![Resume review page with paste-your-resume text field](screenshots/resume-review.jpg) | ![Google Meet-style call with Marcus avatar and in-call chat panel](screenshots/meet-session.jpg) |
 
+Every screen is built mobile-first, and the local engine check tells you whether
+your device can run the interviewer on-device before anything is downloaded:
+
+| On a phone (390px) | Session on a phone | Local engine check |
+|---|---|---|
+| ![Interviewer selection on a 390px viewport, cards in a single column](screenshots/interviewer-selection-mobile.jpg) | ![Interview session on a phone, toolbar with mic, camera, captions, hang-up and chat](screenshots/meet-session-mobile.jpg) | ![Engine check screen listing WebGPU, WebAssembly SIMD and model bundle status](screenshots/engine-check.jpg) |
+
+> Regenerate all of these with `node scripts/captureScreenshots.mjs`.
+
 ---
 
 ## What it does
@@ -26,12 +35,17 @@ Web version of **[DevOps Interview AI](https://github.com/AI-DevOps-Interview-Av
 - **Voice input/output** — Web Speech API for speech-to-text answers, SpeechSynthesis TTS for the interviewer, with continuous-listening recovery so answers don't get cut off mid-thought
 - **EN/UA language switcher** — every screen, English by default
 - **History** — past sessions persisted in `localStorage`
+- **Local engine check** — whether this device can run Gemma 3 1B on-device, reported requirement by requirement (WebGPU, WASM SIMD, model bundle) instead of one blank failure
 
 All inference and state stay in the browser — no backend server, no API keys, no account.
 
 ## Architecture
 
-Just like the mobile apps, all inference runs on the client — no backend server, no API keys. GitHub Pages only serves static files, so LLM inference runs directly in the browser via WebAssembly/WebGPU (MediaPipe LLM Inference Web API) — tracked in epic **[DIA-84](https://devops-interview-ai.atlassian.net/browse/DIA-84)**. Until that lands, a canned `MockLlmBackend` drives interview responses — the same approach as `MockLLMBackend` in `devops-interview-apple` — so the full pipeline/practice/resume/voice UX above works end-to-end today without waiting on the real on-device model.
+Just like the mobile apps, all inference runs on the client — no backend server, no API keys. GitHub Pages only serves static files, so LLM inference runs directly in the browser via WebAssembly/WebGPU (MediaPipe LLM Inference Web API), tracked in epic **[DIA-84](https://devops-interview-ai.atlassian.net/browse/DIA-84)**.
+
+The engine itself landed in **DIA-96**: `MediaPipeLlmBackend` starts a session, streams tokens and closes the graph, and it has been verified answering on real hardware with the same Gemma 3 1B bundle the Android app ships — see [`docs/on-device-llm.md`](docs/on-device-llm.md). What it is not yet is the voice of the interview: putting the weights on a device is DIA-97, and turning a transcript into a prompt Gemma understands is DIA-99.
+
+Until those land, a canned `MockLlmBackend` drives interview responses — the same approach as `MockLLMBackend` in `devops-interview-apple` — so the full pipeline/practice/resume/voice UX above works end-to-end today. `selectLlmBackend()` picks between the two and always reports which one you got, because a candidate who believes they are talking to a local model while reading a script is the one outcome worth failing loudly over.
 
 ## Tech Stack
 
