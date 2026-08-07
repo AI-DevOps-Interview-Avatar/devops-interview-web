@@ -11,7 +11,8 @@
     "practiceLink": "Practice & quiz →",
     "resumeReviewLink": "Resume review →",
     "resourcesLink": "Job search resources →",
-    "developersLink": "Developers →"
+    "developersLink": "Developers →",
+    "engineLink": "Local engine check →"
   },
   "difficulty": {
     "Easy": "Easy",
@@ -167,5 +168,29 @@
   "developers": {
     "title": "Developers",
     "subtitle": "The team and channels behind this project."
+  },
+  "engine": {
+    "title": "Local engine check",
+    "subtitle": "Whether this device can run the interviewer on-device, and what is missing if it cannot.",
+    "checking": "checking…",
+    "yes": "supported",
+    "webgpu": "WebGPU",
+    "simd": "WebAssembly SIMD",
+    "simdFallback": "requires WebAssembly SIMD, which every browser with WebGPU has",
+    "bundle": "Model bundle",
+    "run": "Run a test question",
+    "running": "Running…",
+    "reasons": {
+      "no-webgpu": "this browser has no WebGPU — the on-device model needs it",
+      "no-gpu-adapter": "WebGPU is present but no GPU adapter was granted",
+      "gpu-error": "the graphics driver refused the request",
+      "model-unavailable": "the model bundle has not been downloaded to this device yet",
+      "engine-error": "the runtime could not start with this model",
+      "no-simd": "no WebAssembly SIMD — the runtime this app ships needs it"
+    },
+    "verdict": {
+      "onDevice": "Answered on-device by Gemma 3 1B",
+      "scripted": "Answered from the script"
+    }
   }
 }

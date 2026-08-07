@@ -33,9 +33,27 @@ export const BUDGETS = {
    */
   chunkRaw: 500 * KB,
 
-  /** Everything a candidate downloads if they walk through every screen. */
+  /**
+   * Everything a candidate downloads if they walk through every screen —
+   * excluding the on-device engine, which no amount of walking around fetches.
+   */
   totalGzip: 260 * KB,
+
+  /**
+   * MediaPipe's LLM runtime: the glue bundle plus the loader for its WASM.
+   *
+   * Budgeted apart from everything else because it is paid for on a different
+   * occasion. Nothing here loads until someone asks for an on-device answer,
+   * and when they do the JS is a rounding error against 27 MB of WebAssembly
+   * and half a gigabyte of weights behind it. Folding it into `totalGzip` would
+   * have meant raising that number by half, after which it would no longer
+   * catch anything going wrong on the screens every candidate actually sees.
+   */
+  engineGzip: 110 * KB,
 }
+
+/** Chunks that only exist once the on-device engine is asked for. */
+const ENGINE_CHUNK = /genai/
 
 /** @returns {string[]} one message per breach; empty means the build fits. */
 export function checkBudgets(files, budgets = BUDGETS) {
@@ -58,9 +76,17 @@ export function checkBudgets(files, budgets = BUDGETS) {
     }
   }
 
-  const total = files.reduce((sum, file) => sum + file.gzip, 0)
+  const engine = files.filter((file) => ENGINE_CHUNK.test(file.name))
+  const rest = files.filter((file) => !ENGINE_CHUNK.test(file.name))
+
+  const total = rest.reduce((sum, file) => sum + file.gzip, 0)
   if (total > budgets.totalGzip) {
-    failures.push(over('all chunks together', `${files.length} files`, total, budgets.totalGzip))
+    failures.push(over('all chunks together', `${rest.length} files`, total, budgets.totalGzip))
+  }
+
+  const engineTotal = engine.reduce((sum, file) => sum + file.gzip, 0)
+  if (engineTotal > budgets.engineGzip) {
+    failures.push(over('on-device engine', `${engine.length} files`, engineTotal, budgets.engineGzip))
   }
 
   return failures
@@ -100,6 +126,10 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.exit(1)
   }
 
-  const total = files.reduce((sum, file) => sum + file.gzip, 0)
-  console.log(`bundle budget passed — ${files.length} chunks, ${(total / KB).toFixed(1)} kB gzipped in total.`)
+  const engine = files.filter((file) => ENGINE_CHUNK.test(file.name)).reduce((sum, file) => sum + file.gzip, 0)
+  const total = files.reduce((sum, file) => sum + file.gzip, 0) - engine
+  console.log(
+    `bundle budget passed — ${files.length} chunks, ${(total / KB).toFixed(1)} kB gzipped in total, ` +
+      `plus ${(engine / KB).toFixed(1)} kB fetched only for an on-device answer.`,
+  )
 }

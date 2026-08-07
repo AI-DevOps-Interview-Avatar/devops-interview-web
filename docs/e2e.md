@@ -60,6 +60,7 @@ The split that does earn its keep:
 | Localization | `localization.spec.ts` | mid-interview switch stops and re-speaks; whole transcript re-renders; persona keeps its gender across the switch; seven screens fully translated with no raw keys; session speaks Ukrainian in both senses |
 | Pipeline | `pipeline.spec.ts` | locked stage unreachable by URL; completion unlocks exactly the next; offer reachable at the end; a stage start-to-summary; progress survives a reload |
 | Shell | `shell.spec.ts` | four avatars drawing; clean console; no CDN request on any screen; WASM from our own origin; cold deep link into a session |
+| On-device engine | `engine.spec.ts` | each requirement reported separately; fallback to the script with a stated reason; no CDN request for the runtime. The model *answering* cannot be tested here — no WebGPU adapter on a runner, and 528 MB of weights — and is covered by hand in `docs/on-device-llm.md` |
 | Responsive & a11y | `responsive.spec.ts` | no horizontal scroll on seven routes × six widths; persona grid inside a 320px phone; five pipeline stages plus the offer on phone/tablet/desktop; 44px toolbar targets with the stubs hidden; Back/Home never over the language switcher; captions and mic named, focusable and keyboard-operable; AA contrast on every run of text, and on all three stage-card states |
 
 Four of the responsive assertions failed against the layout that preceded

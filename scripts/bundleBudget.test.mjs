@@ -44,6 +44,23 @@ describe('checkBudgets', () => {
     expect(checkBudgets(files).some((failure) => failure.includes('all chunks together'))).toBe(true)
   })
 
+  it('keeps the engine runtime out of the walk-every-screen total', () => {
+    // Otherwise `totalGzip` would have to absorb ~100 kB that nobody downloads
+    // by browsing, and would stop catching regressions on the screens they do.
+    const files = [...fitting, { name: 'genai_wasm_internal-abc.js', raw: 334 * KB, gzip: 81 * KB, isEntry: false }]
+
+    expect(checkBudgets(files)).toEqual([])
+  })
+
+  it('still holds the engine runtime to a budget of its own', () => {
+    const files = [
+      ...fitting,
+      { name: 'genai_bundle-abc.js', raw: 59 * KB, gzip: BUDGETS.engineGzip + KB, isEntry: false },
+    ]
+
+    expect(checkBudgets(files)[0]).toContain('on-device engine')
+  })
+
   it('fails loudly when it cannot find the entry chunk at all', () => {
     // Silent success on an empty measurement is how a budget check quietly
     // stops checking anything.
