@@ -1,11 +1,12 @@
 /**
  * `npm audit` as a build gate, with a reviewed allowlist.
  *
- * Plain `npm audit --audit-level=high` cannot be a gate here: the one advisory
- * we carry has no fixed release to move to, so the command would fail every
- * build until upstream ships one, and the team would learn to pass `|| true`.
- * The allowlist below is the alternative — every entry names an advisory, why
- * it does not reach this app, and a date by which somebody has to look again.
+ * Plain `npm audit --audit-level=high` cannot be a gate here. The advisory this
+ * project carried had no fixed release to move to, so the command would have
+ * failed every build until upstream shipped one, and the team would have learned
+ * to pass `|| true`. The allowlist is the alternative — every entry names an
+ * advisory, why it does not reach this app, and a date by which somebody has to
+ * look again. It is empty today; the mechanism stays for the next one.
  *
  * Three ways this fails, all deliberate:
  *   - a high or critical advisory nobody has written down;
@@ -20,21 +21,18 @@ import { fileURLToPath } from 'node:url'
 /** Severities that stop a build. Moderate and low are reported by `npm audit` and read by humans. */
 const BLOCKING = new Set(['high', 'critical'])
 
-export const ALLOWLIST = [
-  {
-    advisory: 'GHSA-qwww-vcr4-c8h2',
-    package: 'react-router',
-    reviewBy: '2026-10-31',
-    reason:
-      'CSRF bypass in React Router RSC mode: an action runs before the 400 response. ' +
-      'Reachable only through a React Server Components handler — this app is a static ' +
-      'SPA on GitHub Pages with no server, no actions, no cookies and no session to forge. ' +
-      'No fixed 7.x release exists: the advisory covers 7.12.0 - 8.2.0 and 7.18.2 is the ' +
-      'newest published version. Downgrading to 7.11.0, which is what `npm audit fix --force` ' +
-      'proposes, trades this one advisory for six older ones (open redirect, XSS, DoS). ' +
-      'Revisit when a patched release lands, or if this app ever grows a server.',
-  },
-]
+/**
+ * Empty, and that is the state to keep it in.
+ *
+ * It held one entry — GHSA-qwww-vcr4-c8h2 against react-router, exempt on
+ * reachability because the CSRF bypass lives in RSC mode and this app is a
+ * static SPA. The advisory's affected range was narrowed upstream and it stopped
+ * being reported for the version we were already on, so the third failure mode
+ * below fired and took CI red until the entry was removed (DIA-204). That is the
+ * gate working: an exemption outliving its finding is how the next one in the
+ * same package gets waved through.
+ */
+export const ALLOWLIST = []
 
 /**
  * Every high/critical advisory in an `npm audit --json` report, deduplicated.

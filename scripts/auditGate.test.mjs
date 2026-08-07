@@ -91,6 +91,8 @@ describe('evaluateAudit', () => {
 })
 
 describe('the shipped allowlist', () => {
+  // Empty since DIA-204, so this asserts nothing today by design: it is here to
+  // catch the next entry someone adds in a hurry, not to prove a state.
   it('gives every entry a reason and a review date', () => {
     for (const entry of ALLOWLIST) {
       expect(entry.reason.length).toBeGreaterThan(80)
