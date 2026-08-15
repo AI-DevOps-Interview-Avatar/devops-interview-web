@@ -1,5 +1,6 @@
 import type { LlmBackend } from '../llmClient'
 import { detectEngineSupport, type UnsupportedReason } from './capabilities'
+import { readStoredBundle, releaseBundleUrl } from './modelBundle'
 import { GENERATION_DEFAULTS, defaultModelUrl, isModelBundlePresent } from './modelConfig'
 
 /** Why an on-device session could not start, in a form the UI can translate. */
@@ -22,7 +23,12 @@ interface Inference {
 }
 
 export interface MediaPipeBackendOptions {
-  /** Defaults to the same-origin bundle path; DIA-97 will hand in a cached blob URL instead. */
+  /**
+   * Pins the weights to one URL.
+   *
+   * Left unset — which is the normal case — `init()` prefers the bundle stored
+   * on this device (DIA-97) and falls back to the same-origin path.
+   */
   modelUrl?: string
   maxTokens?: number
   topK?: number
@@ -46,11 +52,15 @@ export interface MediaPipeBackendOptions {
 export class MediaPipeLlmBackend implements LlmBackend {
   private inference: Inference | null = null
   private generating = false
-  private readonly options: Required<MediaPipeBackendOptions>
+  private readonly options: Omit<Required<MediaPipeBackendOptions>, 'modelUrl'> & { modelUrl?: string }
+
+  /** The URL `init()` settled on, and whether we own the object URL behind it. */
+  private modelUrl: string | null = null
+  private ownsModelUrl = false
 
   constructor(options: MediaPipeBackendOptions = {}) {
     this.options = {
-      modelUrl: options.modelUrl ?? defaultModelUrl(),
+      modelUrl: options.modelUrl,
       maxTokens: options.maxTokens ?? GENERATION_DEFAULTS.maxTokens,
       topK: options.topK ?? GENERATION_DEFAULTS.topK,
       temperature: options.temperature ?? GENERATION_DEFAULTS.temperature,
@@ -59,15 +69,18 @@ export class MediaPipeLlmBackend implements LlmBackend {
   }
 
   /**
-   * Order matters and is the point: capabilities first, then 27 MB of runtime,
-   * then half a gigabyte of weights. A machine without a GPU adapter finds out
-   * before it has downloaded anything at all.
+   * Order matters and is the point: capabilities first, then the stored bundle,
+   * then 27 MB of runtime. A machine without a GPU adapter finds out before it
+   * has downloaded anything at all, and a machine with no weights finds out
+   * before the runtime is fetched rather than after.
    */
   async init(): Promise<void> {
     if (this.inference) return
 
     const support = await detectEngineSupport()
     if (!support.supported) throw new LlmUnavailableError(support.reason ?? 'no-webgpu')
+
+    await this.resolveModelUrl()
 
     // Both dynamic, and for the same reason: the glue is ~60 kB and the WASM
     // behind the fileset is 27 MB. Neither belongs in a chunk that loads for a
@@ -80,7 +93,7 @@ export class MediaPipeLlmBackend implements LlmBackend {
 
     try {
       this.inference = (await LlmInference.createFromOptions(resolveGenAiFileset(), {
-        baseOptions: { modelAssetPath: this.options.modelUrl },
+        baseOptions: { modelAssetPath: this.modelUrl! },
         maxTokens: this.options.maxTokens,
         topK: this.options.topK,
         temperature: this.options.temperature,
@@ -129,6 +142,39 @@ export class MediaPipeLlmBackend implements LlmBackend {
     this.inference?.close()
     this.inference = null
     this.generating = false
+
+    // The object URL pins the stored file for as long as it exists. Dropping the
+    // reference without revoking it keeps 528 MB alive for the life of the
+    // document — the leak this class is otherwise careful to avoid.
+    if (this.ownsModelUrl && this.modelUrl) releaseBundleUrl(this.modelUrl)
+    this.modelUrl = null
+    this.ownsModelUrl = false
+  }
+
+  /**
+   * Picks where the weights come from: the copy on this device first, the
+   * same-origin path second.
+   *
+   * The stored bundle wins because it is the only one a deployed site will ever
+   * have — `public/models/` is a development convenience, and GitHub Pages will
+   * not serve a 528 MB file in any case.
+   */
+  private async resolveModelUrl(): Promise<void> {
+    if (this.options.modelUrl) {
+      this.modelUrl = this.options.modelUrl
+      this.ownsModelUrl = false
+      return
+    }
+
+    const stored = await readStoredBundle()
+    if (stored) {
+      this.modelUrl = stored.url
+      this.ownsModelUrl = true
+      return
+    }
+
+    this.modelUrl = defaultModelUrl()
+    this.ownsModelUrl = false
   }
 
   /**
@@ -138,8 +184,13 @@ export class MediaPipeLlmBackend implements LlmBackend {
    * missing bundle, a truncated download and a model encoded for the wrong
    * backend through the same rejected promise, and its wording is not ours to
    * depend on across versions.
+   *
+   * A blob: URL is skipped — it came from a file this app wrote and verified, so
+   * a failure against it is the engine's, and probing it would only prove that
+   * the blob still exists.
    */
   private async classifyStartupFailure(): Promise<LlmFailure> {
-    return (await isModelBundlePresent(this.options.modelUrl)) ? 'engine-error' : 'model-unavailable'
+    if (this.ownsModelUrl) return 'engine-error'
+    return (await isModelBundlePresent(this.modelUrl ?? undefined)) ? 'engine-error' : 'model-unavailable'
   }
 }

@@ -69,6 +69,26 @@ That red build is the feature, not a fault in it. An exemption that outlives its
 finding is exactly the hole the next advisory in that package walks through, and
 nobody goes looking for a stale allowlist entry on their own.
 
+## The nanoid finding (DIA-206)
+
+GHSA-2v37-7h3g-55p8, high: a custom generator loops forever when asked for a size
+of zero. Reported for `nanoid@3.3.17`, reached transitively as
+`vite → postcss → nanoid`, and fixed in 3.3.18 — inside postcss's own `^3.3.11`
+range, so `npm update nanoid` moved it with no change to `package.json` and none
+to any direct dependency.
+
+Two things worth recording. First, it appeared on an unchanged tree: no
+dependency here moved, the advisory database did, exactly as with react-router
+above. Anyone bisecting a red CI against their own diff will not find it.
+
+Second, it was fixed rather than allowlisted even though it is hard to argue this
+app is exposed — `nanoid` is a build-time dependency inside vite, never reaches
+the browser bundle, and nothing in this project calls it at all, let alone with
+`size: 0`. An exemption is the right tool when there is nowhere to move to. When
+a patch exists inside the range already declared, taking it is cheaper than the
+paragraph justifying why we did not, and it leaves no review date for someone to
+inherit.
+
 ## Checking it yourself
 
 ```bash

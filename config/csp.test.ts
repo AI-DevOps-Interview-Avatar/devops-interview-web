@@ -57,8 +57,17 @@ describe('policy strength', () => {
     }
   })
 
-  it('keeps connect-src to same-origin, which is what the local WASM copy buys', () => {
-    expect(CSP_DIRECTIVES['connect-src']).toEqual(["'self'"])
+  it('keeps connect-src to this origin and its own blobs, and no third party', () => {
+    // `blob:` lets MediaPipe read the model bundle out of the origin private
+    // file system, where DIA-97 stores it — an object URL minted here, from a
+    // file this app wrote and verified against a known SHA-256.
+    //
+    // The assertion is written as an exact list on purpose. The interesting
+    // failure is not a missing entry, it is an added one: the GitHub release the
+    // weights come from serves no CORS header, so any attempt to "fix" the
+    // download by naming that origin here would be a policy change that cannot
+    // possibly work, made in the belief that it does.
+    expect(CSP_DIRECTIVES['connect-src']).toEqual(["'self'", 'blob:'])
   })
 })
 

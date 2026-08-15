@@ -49,7 +49,18 @@ export const CSP_DIRECTIVES: Directives = {
   // loader at a copy Vite emits into our own assets. Those two origins were the
   // only third-party ones in the whole policy; keeping them out is what makes
   // the assertion in csp.test.ts meaningful.
-  "connect-src": ["'self'"],
+  //
+  // `blob:` is DIA-97, and it is not a relaxation. The model bundle lives in the
+  // origin private file system, and MediaPipe takes a URL rather than bytes, so
+  // the weights reach it as an object URL this app minted from its own stored
+  // file. Only script already running here can mint one — the same argument
+  // that makes it cheap under img-src.
+  //
+  // Note what is *not* here: the GitHub release the bundle comes from. GitHub
+  // sends no CORS header on release assets, so that fetch cannot succeed from a
+  // browser whatever this policy says; adding the origin would advertise a
+  // capability the app does not have. See modelConfig.ts for the measurements.
+  "connect-src": ["'self'", 'blob:'],
 
   // The self-camera tile attaches a MediaStream via `srcObject`, which CSP does
   // not govern — no blob: needed here.
