@@ -10,6 +10,18 @@ export type ChatMessage =
   | { author: 'interviewer'; questionIndex: number }
   /** The persona's opening self-introduction, looked up via i18n at render time so it also re-translates. */
   | { author: 'interviewer'; greeting: true }
+  /**
+   * A reaction the on-device model wrote to the answer before it (DIA-99).
+   *
+   * The one message type that holds text rather than a key, because nothing
+   * generated has a key to hold. It therefore cannot re-translate on a language
+   * switch, so it records the language it was said in and stays that way —
+   * the decision is written down in `docs/on-device-llm.md` and belongs to
+   * DIA-158. Re-generating it in the new language was the alternative and it
+   * loses: ten seconds of waiting to replace words the candidate already heard
+   * spoken aloud with different ones.
+   */
+  | { author: 'interviewer'; remark: string; lang: 'en' | 'ua' }
 
 interface InterviewState {
   interviewerId: string | null

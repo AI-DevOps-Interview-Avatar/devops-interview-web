@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { seedLanguage } from './session'
+import { interviewerMessages, seedLanguage, waitForQuestion } from './session'
 
 /**
  * The on-device engine, asserted where CI can actually assert it.
@@ -119,6 +119,23 @@ test.describe('the engine check screen', () => {
     await page.reload()
     await expect(page.getByTestId('interviewer-card').first()).toBeVisible()
     await expect(page.getByTestId('engine-invite')).toHaveCount(0)
+  })
+
+  test('an interview on a machine with no model runs the same as it always did', async ({ page }) => {
+    // The state every CI run and most visitors are in. The on-device engine is
+    // warmed in the background and never arrives; what must not happen is the
+    // interview waiting for it, or claiming it is there.
+    await page.goto('interview/recruiter')
+    await waitForQuestion(page)
+
+    const asked = await interviewerMessages(page).count()
+    await page.getByTestId('chat-input').fill('Three stages, sharing a cache.')
+    await page.getByTestId('send').click()
+
+    // The next bank question still arrives, and promptly: the remark path is
+    // skipped rather than awaited when there is no engine to produce one.
+    await expect(interviewerMessages(page)).toHaveCount(asked + 1, { timeout: 15_000 })
+    await expect(page.getByTestId('engine-badge')).toHaveCount(0)
   })
 
   test('never reaches for a CDN to load its runtime', async ({ page }) => {

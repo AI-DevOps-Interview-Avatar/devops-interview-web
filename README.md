@@ -49,9 +49,9 @@ The engine itself landed in **DIA-96**: `MediaPipeLlmBackend` starts a session, 
 
 **DIA-98** made that reachable without knowing it was there. A candidate whose machine can actually run the model is told so on the selection screen — gated on a real `requestAdapter()` call, hidden once the bundle is stored, and remembered when waved away — and `/engine` now leads with the action and ends in *Start an interview* rather than a requirements readout.
 
-What it is not yet is the voice of the interview: turning a transcript into a prompt Gemma understands is DIA-99.
+**DIA-99** gave it a voice in the interview itself. After each answer the model writes a short reaction in the persona's own voice — streamed into the captions and the chat, spoken aloud, and visibly labelled as coming from the local model. The questions stay in the curated bank, which is what keeps the assessment, the pipeline stages and the EN/UA transcript working; the model does the part it is good at, which is sounding like someone who listened.
 
-Until those land, a canned `MockLlmBackend` drives interview responses — the same approach as `MockLLMBackend` in `devops-interview-apple` — so the full pipeline/practice/resume/voice UX above works end-to-end today. `selectLlmBackend()` picks between the two and always reports which one you got, because a candidate who believes they are talking to a local model while reading a script is the one outcome worth failing loudly over.
+On every other device — no WebGPU, or no bundle imported — the interview is the one it always was: a canned `MockLlmBackend` paces out the curated questions, the same approach as `MockLLMBackend` in `devops-interview-apple`, so the full pipeline/practice/resume/voice UX works end-to-end with nothing downloaded. `selectLlmBackend()` picks between the two and always reports which one you got, because a candidate who believes they are talking to a local model while reading a script is the one outcome worth failing loudly over.
 
 ## Tech Stack
 

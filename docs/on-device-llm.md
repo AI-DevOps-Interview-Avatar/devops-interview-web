@@ -1,13 +1,18 @@
 # The on-device engine
 
-Reference for DIA-96 and DIA-97 — MediaPipe's LLM Inference Web API running
+Reference for DIA-96 through DIA-99 — MediaPipe's LLM Inference Web API running
 Gemma 3 1B in the browser, with no server behind it, on weights the device keeps
-for itself.
+for itself, answering a candidate in the interviewer's voice.
 
-Turning an interview into a prompt is still DIA-99, and the first-run bootstrap
-experience is still DIA-98. What exists now is a backend that starts, streams and
-closes; an honest answer about whether this machine can run it; and a way to get
-half a gigabyte of weights onto that machine and verify them.
+What exists now is a backend that starts, streams and closes; an honest answer
+about whether this machine can run it; a way to get half a gigabyte of weights
+onto that machine and verify them; an offer that reaches the candidate rather
+than waiting on a diagnostics page; and a prompt that makes the model behave like
+an interviewer rather than a completion engine.
+
+What is still open is written down where it belongs: the language of a generated
+line on a mid-interview switch (DIA-158), and the quality of Ukrainian output
+from a 1B model (DIA-207).
 
 ## What was open, and what the answer turned out to be
 
@@ -203,6 +208,97 @@ wrong size" and leaves nothing behind; the same path with the right length and
 tampered contents fails on the digest. Both are covered in
 `src/api/llm/modelBundle.test.ts` against a 22-byte stand-in bundle, and the
 rejection is asserted in `e2e/engine.spec.ts` where CI can run it.
+
+## What the model actually says in an interview (DIA-99)
+
+### It reacts; it does not ask
+
+The model writes a **remark** — a short reaction to the answer just given — and
+the questions stay in `questionBank.ts`. That division is not timidity, it is
+what the rest of the app is built on:
+
+- `assessSession` measures coverage against `selectedQuestions`;
+- pipeline stages *are* fixed question sets (`PIPELINE_QUESTION_SETS`);
+- the transcript re-translates on a language switch because interviewer messages
+  store a question index rather than text.
+
+A generated question would break all three quietly. So the model does the part
+it is good at — sounding like someone who listened — and the deterministic parts
+stay deterministic.
+
+```
+Emma:      How deep is your experience with Docker and Kubernetes?   ← bank, re-translates
+Candidate: We ran GitLab CI with three stages, sharing a cache.
+Emma:      That's great – GitLab CI experience! And I'm interested   ← model, stays in its language
+           to see if you've had experience managing your own
+           Kubernetes clusters?
+Emma:      Are you able to travel abroad if the project requires it? ← bank, re-translates
+```
+
+### The template, and the two things that went wrong without it
+
+Gemma has no `system` role; instructions go in the first user turn, and the
+model's turn is opened and left open — closing it would ask the model to start a
+new turn, which is how a completion ends up writing everyone's lines.
+
+**Failure one, from the DIA-96 run:** with no turn structure at all, the model
+answered and then invented an interlocutor to write an essay to. Fixed by the
+template, plus `cleanRemark`, which discards anything after `<end_of_turn>` or a
+second `<start_of_turn>` — a completion is free to ignore its own stop marker and
+this one regularly does.
+
+**Failure two, found while testing this ticket:** transcript lines labelled
+`You:` / `Ти:` had the model reply *as the candidate* — "Відповідь на ідеї: Я
+готовий пройти background check" is the candidate's line, not the recruiter's.
+Labelling the interviewer turns with the persona's own name (`Emma:`) gave the
+completion an unambiguous voice to continue and the problem went away.
+
+### The budget is a hard edge, not a preference
+
+`maxTokens` is 2048 and covers input *and* output together; MediaPipe **rejects**
+a request whose prompt exceeds it rather than truncating. So the builder reserves
+192 tokens for the answer and drops the oldest turns until the rest fits, never
+dropping the instruction or the newest turn, and truncating rather than omitting
+a single oversized answer.
+
+Token counts are estimated — the tokenizer lives inside the WASM runtime and is
+not exposed — and estimated **high**, with Cyrillic charged at roughly twice the
+rate of Latin. The errors are not symmetric: overestimating costs one turn of
+history, underestimating makes the interviewer fall silent at question five.
+
+### Measured on the development laptop
+
+Both runs: production build, CSP active, persistent profile with the bundle
+imported, Chrome with the GPU blocklist overridden.
+
+```
+engine ready (background warm-up) : 11-18 s after the session opens
+remark generated                  : 15-19 s per answer
+console errors                    : none
+
+EN: "That's great – GitLab CI experience! And I'm interested to see if you've
+     had experience managing your own Kubernetes clusters?"
+UA: "Дякую за відповідь! Я бачу що ви іте знань на існуючі технології і з
+     ініціативи і хочете розвивати свої навички на новій позиції."
+```
+
+Read that Ukrainian sample honestly: it is in the right language, in the right
+voice, on the right subject, and its grammar is poor. That is Gemma 3 1B, not the
+prompt — the English on the same build is fine. Worth knowing before this is put
+in front of a Ukrainian-speaking candidate, and tracked separately (DIA-207)
+rather than papered over here.
+
+### Nothing waits for it
+
+The engine is warmed in the background and never awaited. Starting a graph over
+528 MB of weights takes tens of seconds, and blocking the greeting on it would
+trade a working scripted interview for a loading screen. When no model arrives —
+no WebGPU, no bundle, or a generation that fails — the next bank question is
+asked immediately and the session is exactly what it was before this ticket.
+
+The badge under the persona's name says which of the two is happening. That is
+the same rule the fallback follows: never silent about which interviewer the
+candidate is actually talking to.
 
 ## Requirements, and how each one is detected
 

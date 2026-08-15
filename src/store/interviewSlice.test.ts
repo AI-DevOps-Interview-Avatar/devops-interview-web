@@ -93,6 +93,44 @@ describe('addMessage', () => {
   })
 })
 
+describe('a generated remark', () => {
+  it('does not count as a question asked', () => {
+    // The remark sits between an answer and the next question. If it counted,
+    // the reducer would think the bank had moved on and skip a question — and
+    // `assessSession` measures coverage off the same number.
+    const state = reducer(session(3, 1), addMessage({ author: 'interviewer', remark: 'Good split.', lang: 'en' }))
+
+    expect(state.questionCount).toBe(1)
+    expect(state.messages).toHaveLength(3)
+  })
+
+  it('does not end the session, however late it arrives', () => {
+    // Only a candidate's answer to the last question finishes an interview.
+    const state = reducer(session(2, 2), addMessage({ author: 'interviewer', remark: 'Noted.', lang: 'en' }))
+
+    expect(state.finished).toBe(true)
+    expect(reducer(session(2, 1), addMessage({ author: 'interviewer', remark: 'Noted.', lang: 'ua' })).finished).toBe(
+      false,
+    )
+  })
+
+  it('leaves an open question request alone', () => {
+    // The remark is generated while the next question is already requested in
+    // some flows; clearing the pending index here would strand it.
+    const pending = reducer(session(3, 1), requestNextQuestion())
+    const after = reducer(pending, addMessage({ author: 'interviewer', remark: 'And then?', lang: 'en' }))
+
+    expect(after.pendingQuestionIndex).toBe(1)
+  })
+
+  it('keeps the language it was spoken in', () => {
+    const state = reducer(session(3, 1), addMessage({ author: 'interviewer', remark: 'Розумно.', lang: 'ua' }))
+    const last = state.messages.at(-1)
+
+    expect(last).toEqual({ author: 'interviewer', remark: 'Розумно.', lang: 'ua' })
+  })
+})
+
 describe('startInterview', () => {
   it('clears a pending request from the previous session', () => {
     const pending = reducer(session(3, 0), requestNextQuestion())

@@ -85,6 +85,17 @@ describe('starting a session', () => {
     await expect(new MediaPipeLlmBackend().init()).rejects.toMatchObject({ reason: 'model-unavailable' })
   })
 
+  it('does not download the runtime to discover there are no weights', async () => {
+    // 27 MB of WASM, fetched by a visitor who has no bundle and cannot use it —
+    // which is most visitors. The class documents capabilities-then-weights-then
+    // -runtime, and for a while only the comment said so: `init()` imported the
+    // runtime before anything had asked whether a bundle existed at all.
+    stubHead({ ok: false })
+
+    await expect(new MediaPipeLlmBackend().init()).rejects.toMatchObject({ reason: 'model-unavailable' })
+    expect(createFromOptions).not.toHaveBeenCalled()
+  })
+
   it('is not fooled by an SPA host answering 200 with its index page', async () => {
     // Vite's preview server does this, and so does any static host with an
     // SPA fallback: a HEAD for a bundle that is not there comes back 200 with
