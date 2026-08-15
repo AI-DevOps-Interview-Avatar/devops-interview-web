@@ -22,13 +22,53 @@
  */
 export const MODEL_FILE_NAME = 'Gemma3-1B-IT_multi-prefill-seq_q4_ekv2048.task'
 
+/** The release the asset is attached to, shown next to the download link. */
+export const MODEL_RELEASE_TAG = 'v1.5.0'
+
 /**
- * Where the bundle is served from until DIA-97 fetches it from Releases and
- * caches it.
+ * Where a person can get the bundle. A link for them to click — **not** a URL
+ * this app can fetch.
  *
- * Same-origin on purpose: `connect-src` is `'self'`, and a cross-origin fetch
- * of the weights is a policy change (DIA-116) rather than a URL change. Under
- * the Pages base path this resolves to `/devops-interview-web/models/<file>`.
+ * That distinction is the finding of DIA-116 and it cost this ticket its
+ * original shape. GitHub sends no `Access-Control-Allow-Origin` on release
+ * assets, on either hop: `github.com/…/releases/download/…` answers 302 with no
+ * CORS header, and the `release-assets.githubusercontent.com` blob it points at
+ * answers 206 with none either (checked 2026-08-15 with `Origin:
+ * https://ai-devops-interview-avatar.github.io`). A browser therefore cannot
+ * read these bytes from our origin at all, and no Content-Security-Policy of
+ * ours changes that — CSP can only forbid a request the server was willing to
+ * answer. `no-cors` is not a way out: an opaque response has no readable body,
+ * which is the only part we want.
+ *
+ * Hence `importBundleFromFile` in `modelBundle.ts`: the candidate downloads this
+ * URL the ordinary way and hands us the file. The integrity check the fetch
+ * would have skipped happens either way, against `MODEL_SHA256`.
+ */
+export const MODEL_RELEASE_URL =
+  `https://github.com/AI-DevOps-Interview-Avatar/devops-interview-app/releases/download/${MODEL_RELEASE_TAG}/${MODEL_FILE_NAME}`
+
+/**
+ * The bundle's size and digest, from the GitHub release asset metadata
+ * (`GET /releases/tags/v1.5.0` → `size`, `digest`).
+ *
+ * Both are checked before anything is handed to MediaPipe, and the digest is
+ * the one that matters: the weights arrive over a link this app does not
+ * control, through a file picker, from a person who may well have fetched them
+ * from wherever a search engine offered. A model file is executable in every
+ * way that counts — it is the thing that will be asked to speak to a candidate
+ * about their salary — and "it was the right size" is not provenance.
+ */
+export const MODEL_SIZE_BYTES = 554_661_246
+export const MODEL_SHA256 = 'ddfaf1210d8b4d1b812b5fadb6652999e852c8be6dd9abe353b9213a25262c10'
+
+/**
+ * The same-origin path, still supported and still the fastest way to run the
+ * engine on a development machine: drop the file in `public/models/` and it is
+ * served under the Pages base path as `/devops-interview-web/models/<file>`.
+ *
+ * Not a deployment strategy — GitHub Pages caps a single file at 100 MB and a
+ * site at 1 GB, and this file is 528 MB. It is what `scripts/engineLiveCheck.mjs`
+ * has always used, and what the OPFS cache falls back to when it is empty.
  */
 export function defaultModelUrl(baseUrl = import.meta.env.BASE_URL): string {
   return `${baseUrl.replace(/\/$/, '')}/models/${MODEL_FILE_NAME}`

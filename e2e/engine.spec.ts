@@ -51,6 +51,36 @@ test.describe('the engine check screen', () => {
     await expect(page.getByTestId('engine-answer')).not.toBeEmpty()
   })
 
+  test('explains how the weights get here, and links the release they come from', async ({ page }) => {
+    // The shape of this section is forced by something outside the app: GitHub
+    // sends no Access-Control-Allow-Origin on release assets, so the page cannot
+    // fetch them however much it would like to. What must never regress is the
+    // explanation — a bare file picker with no reason attached is indistinguishable
+    // from a broken download button.
+    await page.goto('engine')
+
+    await expect(page.getByTestId('bundle-absent')).toContainText('CORS')
+    await expect(page.getByTestId('bundle-release-link')).toHaveAttribute(
+      'href',
+      /devops-interview-app\/releases\/download\/v1\.5\.0\//,
+    )
+  })
+
+  test('rejects a file that is not the bundle, and keeps nothing', async ({ page }) => {
+    await page.goto('engine')
+
+    await page.getByTestId('bundle-file-input').setInputFiles({
+      name: 'Gemma3-1B-IT_multi-prefill-seq_q4_ekv2048.task',
+      mimeType: 'application/octet-stream',
+      buffer: Buffer.from('the right name and none of the bytes'),
+    })
+
+    await expect(page.getByTestId('bundle-error')).toBeVisible()
+    // Still nothing on the device — the failed import must not leave a file the
+    // engine would later try to load.
+    await expect(page.getByTestId('probe-bundle')).toContainText('❌')
+  })
+
   test('never reaches for a CDN to load its runtime', async ({ page }) => {
     // MediaPipe's documented setup points `FilesetResolver` at jsdelivr. This
     // project already shipped that mistake once with Rive (DIA-181) on a page

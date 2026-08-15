@@ -17,6 +17,12 @@
  *      `public/models/` is gitignored — and note that `npm run build` copies all
  *      of `public/`, so move it back out before building.
  *
+ *      The other way, and the one a visitor uses: download the asset anywhere
+ *      and import it on `/engine` (DIA-97). That stores it in the origin private
+ *      file system, which is per browser profile — so a run driven by this
+ *      script needs `launchPersistentContext`, since a fresh context starts with
+ *      empty storage every time.
+ *
  *   2. Serve the app, either `npm run dev` (port 5173) or a built
  *      `npx vite preview --port 4180`. Prefer the latter at least once: only
  *      the production build carries the CSP, and the runtime has to load under

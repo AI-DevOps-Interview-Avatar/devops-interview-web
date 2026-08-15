@@ -191,6 +191,28 @@
     "verdict": {
       "onDevice": "Answered on-device by Gemma 3 1B",
       "scripted": "Answered from the script"
+    },
+    "bundleSource": {
+      "title": "The model bundle",
+      "stored": "Stored on this device — {{size}} MB, verified and added {{date}}. It stays here until you remove it; nothing is uploaded anywhere.",
+      "served": "Served from this site, out of public/models/ — the development setup.",
+      "why": "GitHub serves release downloads without the CORS header a browser needs, so this page cannot fetch the {{size}} MB bundle for you. Download it yourself, then point us at the file: it is checked against a known SHA-256 and stored in this browser, on this device only.",
+      "download": "Download {{file}} from release {{tag}}",
+      "thenPick": "Choose the downloaded file here:",
+      "progress": "{{percent}}% · {{received}} / {{total}} MB · {{speed}} MB/s",
+      "verifying": "Checking the file against its SHA-256…",
+      "cancel": "Cancel",
+      "retry": "Try another file",
+      "remove": "Remove from this device"
+    },
+    "bundleErrors": {
+      "no-storage": "This browser will not let the page store a file of this size, so the model cannot be kept here.",
+      "insufficient-space": "Not enough free space on this device for the bundle.",
+      "checksum-mismatch": "That file is not the bundle this app expects — its contents do not match the published SHA-256. It has not been kept.",
+      "wrong-size": "That is not the model bundle: the file is the wrong size.",
+      "network-error": "The file could not be read to the end.",
+      "cancelled": "Cancelled. Nothing was kept.",
+      "storage-error": "The file could not be stored on this device."
     }
   }
 }

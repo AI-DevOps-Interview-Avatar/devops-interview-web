@@ -43,7 +43,11 @@ All inference and state stay in the browser — no backend server, no API keys, 
 
 Just like the mobile apps, all inference runs on the client — no backend server, no API keys. GitHub Pages only serves static files, so LLM inference runs directly in the browser via WebAssembly/WebGPU (MediaPipe LLM Inference Web API), tracked in epic **[DIA-84](https://devops-interview-ai.atlassian.net/browse/DIA-84)**.
 
-The engine itself landed in **DIA-96**: `MediaPipeLlmBackend` starts a session, streams tokens and closes the graph, and it has been verified answering on real hardware with the same Gemma 3 1B bundle the Android app ships — see [`docs/on-device-llm.md`](docs/on-device-llm.md). What it is not yet is the voice of the interview: putting the weights on a device is DIA-97, and turning a transcript into a prompt Gemma understands is DIA-99.
+The engine itself landed in **DIA-96**: `MediaPipeLlmBackend` starts a session, streams tokens and closes the graph, and it has been verified answering on real hardware with the same Gemma 3 1B bundle the Android app ships — see [`docs/on-device-llm.md`](docs/on-device-llm.md).
+
+**DIA-97** put the weights within reach of an ordinary visit. GitHub serves release assets without CORS, so a browser cannot fetch them however much this app would like to — the `/engine` screen therefore links the release, takes the downloaded file through a picker, verifies it against a published SHA-256, and keeps it in the origin private file system so the next visit starts straight into the model. Nothing is uploaded, and the file stays until it is removed by hand.
+
+What it is not yet is the voice of the interview: turning a transcript into a prompt Gemma understands is DIA-99, and the first-run experience around that download is DIA-98.
 
 Until those land, a canned `MockLlmBackend` drives interview responses — the same approach as `MockLLMBackend` in `devops-interview-apple` — so the full pipeline/practice/resume/voice UX above works end-to-end today. `selectLlmBackend()` picks between the two and always reports which one you got, because a candidate who believes they are talking to a local model while reading a script is the one outcome worth failing loudly over.
 

@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LanguageSwitcher } from '../../shared/ui/LanguageSwitcher'
 import { PageNav } from '../../shared/ui/PageNav'
 import { detectEngineSupport, isSimdSupported, type EngineSupport } from '../../api/llm/capabilities'
+import { statStoredBundle } from '../../api/llm/modelBundle'
 import { MODEL_FILE_NAME, isModelBundlePresent } from '../../api/llm/modelConfig'
 import { selectLlmBackend, type BackendSelection } from '../../api/llm/selectBackend'
+import { ModelBundleSection } from './ModelBundleSection'
 
 /**
  * Whether this device can run the interviewer locally, and if not, which part
@@ -29,13 +31,20 @@ export default function EngineCheckPage() {
   const [answer, setAnswer] = useState('')
   const [running, setRunning] = useState(false)
 
-  useEffect(() => {
-    void detectEngineSupport().then(setSupport)
+  const probeBundle = useCallback(async (): Promise<Probe> => {
+    // The stored copy first: on a deployed site it is the only one there will
+    // ever be, and asking it costs no network at all.
+    if (await statStoredBundle()) return 'present'
 
     // HEAD rather than GET: the answer is whether the bundle is there, and the
     // bundle is 528 MB.
-    void isModelBundlePresent().then((present) => setBundle(present ? 'present' : 'absent'))
+    return (await isModelBundlePresent()) ? 'present' : 'absent'
   }, [])
+
+  useEffect(() => {
+    void detectEngineSupport().then(setSupport)
+    void probeBundle().then(setBundle)
+  }, [probeBundle])
 
   async function runInference() {
     setRunning(true)
@@ -80,6 +89,13 @@ export default function EngineCheckPage() {
               : `❌ ${t('engine.reasons.model-unavailable')}`}
         </Row>
       </dl>
+
+      <ModelBundleSection
+        onBundleChange={() => {
+          setBundle('checking')
+          void probeBundle().then(setBundle)
+        }}
+      />
 
       <button data-testid="engine-run" onClick={() => void runInference()} disabled={running}>
         {running ? t('engine.running') : t('engine.run')}

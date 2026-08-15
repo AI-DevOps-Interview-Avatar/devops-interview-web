@@ -39,7 +39,7 @@ policy with no extra step.
 | `style-src` | `'self'` | CSS is extracted to a file. React applies `style={{…}}` objects through the CSSOM, not as a `style` attribute, so no `'unsafe-inline'` is needed |
 | `img-src` | `'self' data: blob:` | Same-origin favicon; `data:` for inlined assets; `blob:` for Rive's raster decode — see below |
 | `font-src` | `'self'` | System font stack, no webfonts |
-| `connect-src` | `'self'` | i18n bundles, `.riv` files and Rive's WASM runtime are all same-origin — see below for how the last one got there |
+| `connect-src` | `'self' blob:` | i18n bundles, `.riv` files and Rive's WASM runtime are all same-origin — see below for how the last one got there. `blob:` is how MediaPipe reads the model bundle out of the origin private file system (DIA-97): it takes a URL rather than bytes, so the stored file is handed over as an object URL this origin minted for itself |
 | `media-src` | `'self'` | The self-camera tile attaches a `MediaStream` via `srcObject`, which CSP does not govern |
 | `object-src`, `frame-src` | `'none'` | No plugins, no iframes |
 | `base-uri` | `'self'` | Stops an injected `<base>` from repointing every relative URL |
@@ -91,8 +91,13 @@ DIA-181 moved both binaries to our own origin:
 - `initRiveRuntime()` hands those URLs to `RuntimeLoader.setWasmUrl()` and
   `setWasmFallbackUrl()`. `main.tsx` calls it before `createRoot`, because the
   loader keeps whichever URL it had when the first instance asked for a runtime;
-- `connect-src` is back to `'self'` alone, and `config/csp.test.ts` fails on any
-  directive value containing `://`.
+- `connect-src` named no third party again, and `config/csp.test.ts` fails on any
+  directive value containing `://`. It has since gained `blob:` for the model
+  bundle (DIA-97) — a scheme, not an origin, and one only this page can mint a
+  URL in. The third-party assertion is untouched, and it is the one that matters:
+  the GitHub release the weights come from is deliberately **not** listed, because
+  GitHub sends no CORS header on release assets and naming the origin here would
+  advertise a capability the app does not have.
 
 Two consequences worth knowing:
 
