@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
   BundleError,
@@ -27,10 +28,13 @@ import {
  * text says so plainly rather than presenting a "Download" button that would
  * fail for a reason nobody could be expected to guess.
  *
- * Deliberately plain: this is the mechanism, not the screen. The bootstrap
- * experience — first-run flow, resumable download, the progress bar a candidate
- * actually sees — is DIA-98, and it will consume these functions rather than
- * this markup.
+ * DIA-98 turned it from a mechanism into a path. What was missing was never the
+ * progress bar — it was that nobody arrived here: `/engine` was a diagnostics
+ * page reachable only by someone who already knew to look. The invitation now
+ * comes to the candidate on the selection screen (`LocalModelInvite`), this
+ * section leads with what the model buys rather than what it costs, and a
+ * finished import ends in a link back to an interview instead of a stored-file
+ * receipt.
  */
 
 type BundleState =
@@ -129,9 +133,30 @@ export function ModelBundleSection({ onBundleChange }: { onBundleChange?: () => 
               date: new Date(bundle.storedAt).toLocaleDateString(),
             })}
           </p>
-          <button data-testid="bundle-remove" onClick={() => void remove()}>
-            {t('engine.bundleSource.remove')}
-          </button>
+          {/* The way out of this screen. Someone who just spent minutes on a
+              download came here to interview, not to admire a stored file. */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <Link
+              to="/interview"
+              data-testid="bundle-start-interview"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                minHeight: 'var(--tap-target)',
+                padding: '0.4rem 1rem',
+                borderRadius: 8,
+                background: '#c084fc',
+                color: '#1c1d23',
+                fontWeight: 600,
+                textDecoration: 'none',
+              }}
+            >
+              {t('engine.bundleSource.startInterview')}
+            </Link>
+            <button data-testid="bundle-remove" onClick={() => void remove()}>
+              {t('engine.bundleSource.remove')}
+            </button>
+          </div>
         </div>
       )}
 
@@ -143,6 +168,10 @@ export function ModelBundleSection({ onBundleChange }: { onBundleChange?: () => 
 
       {bundle.status === 'absent' && !busy && (
         <div data-testid="bundle-absent">
+          {/* What it buys, before what it costs. The paragraph below is an
+              explanation of an obstacle, and leading with an obstacle reads as
+              an apology for a feature nobody has been offered yet. */}
+          <p style={{ color: '#d1d5db', margin: '0 0 0.5rem' }}>{t('engine.bundleSource.benefit')}</p>
           <p style={{ color: '#9ca3af', margin: '0 0 0.75rem' }}>
             {t('engine.bundleSource.why', { size: megabytes(MODEL_SIZE_BYTES) })}
           </p>

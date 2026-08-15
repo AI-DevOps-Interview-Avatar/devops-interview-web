@@ -1,14 +1,18 @@
 # The on-device engine
 
-Reference for DIA-96, DIA-97 and DIA-99 — MediaPipe's LLM Inference Web API
-running Gemma 3 1B in the browser, with no server behind it, on weights the
-device keeps for itself, answering a candidate in the interviewer's voice.
+Reference for DIA-96 through DIA-99 — MediaPipe's LLM Inference Web API running
+Gemma 3 1B in the browser, with no server behind it, on weights the device keeps
+for itself, answering a candidate in the interviewer's voice.
 
-The first-run bootstrap experience is still DIA-98. What exists now is a backend
-that starts, streams and closes; an honest answer about whether this machine can
-run it; a way to get half a gigabyte of weights onto that machine and verify
-them; and a prompt that makes the model behave like an interviewer rather than a
-completion engine.
+What exists now is a backend that starts, streams and closes; an honest answer
+about whether this machine can run it; a way to get half a gigabyte of weights
+onto that machine and verify them; an offer that reaches the candidate rather
+than waiting on a diagnostics page; and a prompt that makes the model behave like
+an interviewer rather than a completion engine.
+
+What is still open is written down where it belongs: the language of a generated
+line on a mid-interview switch (DIA-158), and the quality of Ukrainian output
+from a 1B model (DIA-207).
 
 ## What was open, and what the answer turned out to be
 
@@ -107,6 +111,35 @@ So the person downloads the file the ordinary way — the link is right there on
 `/engine` — and hands it back through a file picker. One extra step, stated
 plainly on screen rather than dressed up as a download button that would fail
 for a reason nobody could guess.
+
+### How a candidate finds out any of this exists (DIA-98)
+
+Everything above shipped behind `/engine`, a diagnostics page reachable only by
+someone who already knew to look for it. The weights are not something a person
+goes hunting for, so the offer goes to them: `LocalModelInvite` appears on the
+interviewer selection screen, under the privacy note.
+
+It is shown only when all three are true, and the strictness is the feature:
+
+| Condition | Why |
+|---|---|
+| `requestAdapter()` returns an adapter | Most visitors have no WebGPU. Inviting them to fetch 528 MB they cannot use is worse than saying nothing |
+| No bundle stored yet | Otherwise it advertises something already done |
+| Not dismissed before | "Not now" is remembered, under the shared storage namespace, so *Clear my data* resets it with everything else |
+
+The banner asks the GPU **twice**, a second apart, and `/engine` asks once. That
+asymmetry is deliberate and was measured: on a cold browser profile Chrome's GPU
+process is still starting while the selection screen renders, `requestAdapter()`
+resolves to null, and the same machine answers yes a second later — the banner
+genuinely did not appear on a first run and did on the next. A background banner
+can afford to ask again; a visitor who truly has no adapter should not be made to
+wait for a probe to tell them so.
+
+`/engine` itself was reordered to match its new job: the action first, the
+requirement rows after it, and a finished import ending in **Start an interview**
+rather than a stored-file receipt. The bundle section leads with what the model
+buys before explaining what it costs — an obstacle in the first paragraph reads
+as an apology for a feature nobody has been offered yet.
 
 ### What happens to the file once it is chosen
 

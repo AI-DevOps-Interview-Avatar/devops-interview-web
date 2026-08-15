@@ -204,7 +204,9 @@
       "verifying": "Checking the file against its SHA-256…",
       "cancel": "Cancel",
       "retry": "Try another file",
-      "remove": "Remove from this device"
+      "remove": "Remove from this device",
+      "benefit": "With the model on this device, the interviewer reacts to your answers instead of reading from a script. Everything still runs in this browser — nothing is uploaded, and it works offline once the file is here.",
+      "startInterview": "Start an interview"
     },
     "bundleErrors": {
       "no-storage": "This browser will not let the page store a file of this size, so the model cannot be kept here.",
@@ -214,6 +216,13 @@
       "network-error": "The file could not be read to the end.",
       "cancelled": "Cancelled. Nothing was kept.",
       "storage-error": "The file could not be stored on this device."
+    },
+    "requirements": "What this device needs",
+    "invite": {
+      "title": "This device can run the interviewer locally.",
+      "body": "With the model prepared, the interviewer reacts to what you actually said instead of following a script. One {{size}} MB download, kept on this device and never uploaded.",
+      "prepare": "Prepare the model",
+      "later": "Not now"
     }
   }
 }
