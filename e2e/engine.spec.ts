@@ -81,6 +81,46 @@ test.describe('the engine check screen', () => {
     await expect(page.getByTestId('probe-bundle')).toContainText('❌')
   })
 
+  test('does not offer the download to a machine that could not run it', async ({ page }) => {
+    // Headless Chromium has no WebGPU adapter, which is also most visitors. An
+    // invitation to fetch half a gigabyte they cannot use is worse than silence,
+    // so the banner is gated on `requestAdapter()` rather than on hope.
+    await page.goto('interview')
+    await expect(page.getByTestId('interviewer-card').first()).toBeVisible()
+
+    await expect(page.getByTestId('engine-invite')).toHaveCount(0)
+  })
+
+  test('offers the download where the candidate already is, and takes no for an answer', async ({ page }) => {
+    // The adapter is stubbed because the runner has none: what is under test is
+    // the offer's own logic — shown when the device qualifies, gone for good
+    // once waved away — not WebGPU.
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'gpu', {
+        configurable: true,
+        value: { requestAdapter: async () => ({ info: { vendor: 'test', description: 'stub' } }) },
+      })
+    })
+
+    await page.goto('interview')
+    const invite = page.getByTestId('engine-invite')
+    await expect(invite).toBeVisible()
+    await expect(invite).toContainText('locally')
+
+    await page.getByTestId('engine-invite-prepare').click()
+    await expect(page).toHaveURL(/\/engine$/)
+    await expect(page.getByTestId('bundle-absent')).toBeVisible()
+
+    await page.goBack()
+    await page.getByTestId('engine-invite-dismiss').click()
+    await expect(invite).toHaveCount(0)
+
+    // Dismissed means dismissed — the offer does not come back on the next visit.
+    await page.reload()
+    await expect(page.getByTestId('interviewer-card').first()).toBeVisible()
+    await expect(page.getByTestId('engine-invite')).toHaveCount(0)
+  })
+
   test('never reaches for a CDN to load its runtime', async ({ page }) => {
     // MediaPipe's documented setup points `FilesetResolver` at jsdelivr. This
     // project already shipped that mistake once with Rive (DIA-181) on a page

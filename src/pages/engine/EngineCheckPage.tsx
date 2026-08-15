@@ -70,6 +70,18 @@ export default function EngineCheckPage() {
         <p style={{ color: '#9ca3af' }}>{t('engine.subtitle')}</p>
       </header>
 
+      {/* The action comes before the diagnostics. This screen started life as a
+          probe readout (DIA-96) and is now the way a candidate prepares the
+          engine (DIA-98) — someone who arrived to do that should not have to
+          read three requirement rows to find the one thing they came for. */}
+      <ModelBundleSection
+        onBundleChange={() => {
+          setBundle('checking')
+          void probeBundle().then(setBundle)
+        }}
+      />
+
+      <h2 style={{ fontSize: '1.05rem', margin: '0 0 0.4rem' }}>{t('engine.requirements')}</h2>
       <dl style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '0.5rem 1rem', margin: '0 0 1.5rem' }}>
         <Row label={t('engine.webgpu')} testId="probe-webgpu">
           {support === null
@@ -89,13 +101,6 @@ export default function EngineCheckPage() {
               : `❌ ${t('engine.reasons.model-unavailable')}`}
         </Row>
       </dl>
-
-      <ModelBundleSection
-        onBundleChange={() => {
-          setBundle('checking')
-          void probeBundle().then(setBundle)
-        }}
-      />
 
       <button data-testid="engine-run" onClick={() => void runInference()} disabled={running}>
         {running ? t('engine.running') : t('engine.run')}

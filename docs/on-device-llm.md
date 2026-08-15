@@ -107,6 +107,35 @@ So the person downloads the file the ordinary way — the link is right there on
 plainly on screen rather than dressed up as a download button that would fail
 for a reason nobody could guess.
 
+### How a candidate finds out any of this exists (DIA-98)
+
+Everything above shipped behind `/engine`, a diagnostics page reachable only by
+someone who already knew to look for it. The weights are not something a person
+goes hunting for, so the offer goes to them: `LocalModelInvite` appears on the
+interviewer selection screen, under the privacy note.
+
+It is shown only when all three are true, and the strictness is the feature:
+
+| Condition | Why |
+|---|---|
+| `requestAdapter()` returns an adapter | Most visitors have no WebGPU. Inviting them to fetch 528 MB they cannot use is worse than saying nothing |
+| No bundle stored yet | Otherwise it advertises something already done |
+| Not dismissed before | "Not now" is remembered, under the shared storage namespace, so *Clear my data* resets it with everything else |
+
+The banner asks the GPU **twice**, a second apart, and `/engine` asks once. That
+asymmetry is deliberate and was measured: on a cold browser profile Chrome's GPU
+process is still starting while the selection screen renders, `requestAdapter()`
+resolves to null, and the same machine answers yes a second later — the banner
+genuinely did not appear on a first run and did on the next. A background banner
+can afford to ask again; a visitor who truly has no adapter should not be made to
+wait for a probe to tell them so.
+
+`/engine` itself was reordered to match its new job: the action first, the
+requirement rows after it, and a finished import ending in **Start an interview**
+rather than a stored-file receipt. The bundle section leads with what the model
+buys before explaining what it costs — an obstacle in the first paragraph reads
+as an apology for a feature nobody has been offered yet.
+
 ### What happens to the file once it is chosen
 
 `src/api/llm/modelBundle.ts`, in one pass over the bytes:

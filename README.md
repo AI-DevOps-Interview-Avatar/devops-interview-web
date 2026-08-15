@@ -47,7 +47,9 @@ The engine itself landed in **DIA-96**: `MediaPipeLlmBackend` starts a session, 
 
 **DIA-97** put the weights within reach of an ordinary visit. GitHub serves release assets without CORS, so a browser cannot fetch them however much this app would like to — the `/engine` screen therefore links the release, takes the downloaded file through a picker, verifies it against a published SHA-256, and keeps it in the origin private file system so the next visit starts straight into the model. Nothing is uploaded, and the file stays until it is removed by hand.
 
-What it is not yet is the voice of the interview: turning a transcript into a prompt Gemma understands is DIA-99, and the first-run experience around that download is DIA-98.
+**DIA-98** made that reachable without knowing it was there. A candidate whose machine can actually run the model is told so on the selection screen — gated on a real `requestAdapter()` call, hidden once the bundle is stored, and remembered when waved away — and `/engine` now leads with the action and ends in *Start an interview* rather than a requirements readout.
+
+What it is not yet is the voice of the interview: turning a transcript into a prompt Gemma understands is DIA-99.
 
 Until those land, a canned `MockLlmBackend` drives interview responses — the same approach as `MockLLMBackend` in `devops-interview-apple` — so the full pipeline/practice/resume/voice UX above works end-to-end today. `selectLlmBackend()` picks between the two and always reports which one you got, because a candidate who believes they are talking to a local model while reading a script is the one outcome worth failing loudly over.
 
