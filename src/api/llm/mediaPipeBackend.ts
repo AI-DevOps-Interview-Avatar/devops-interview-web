@@ -173,6 +173,15 @@ export class MediaPipeLlmBackend implements LlmBackend {
       return
     }
 
+    // Nothing stored: the same-origin path is checked *here*, before the caller
+    // returns and the 27 MB runtime is imported. The first version of this
+    // method skipped the check and handed back the path regardless, so every
+    // visitor without a bundle — which is most of them — downloaded the whole
+    // WASM runtime to arrive at `model-unavailable` anyway. The order this
+    // class advertises only means something if the cheap question is asked
+    // first.
+    if (!(await isModelBundlePresent())) throw new LlmUnavailableError('model-unavailable')
+
     this.modelUrl = defaultModelUrl()
     this.ownsModelUrl = false
   }

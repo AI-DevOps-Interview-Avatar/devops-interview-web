@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { sessionLevel } from './assessment'
+import { assessSession, sessionLevel } from './assessment'
 import type { BankQuestion, QuestionLevel } from './models/questionBank'
 
 function questions(...levels: QuestionLevel[]): BankQuestion[] {
@@ -31,5 +31,28 @@ describe('sessionLevel', () => {
 
   it('falls back to junior for an empty session rather than throwing', () => {
     expect(sessionLevel([])).toBe('junior')
+  })
+})
+
+describe('assessSession with generated remarks in the transcript', () => {
+  it('counts questions asked, not everything the interviewer said', () => {
+    // A remark is the interviewer talking, and it is not a question. Counting it
+    // would inflate `askedCount` past the number of questions in the session and
+    // pull unrelated categories into the summary.
+    const selected = questions('junior', 'middle')
+    const assessment = assessSession(
+      [
+        { author: 'interviewer', greeting: true },
+        { author: 'interviewer', questionIndex: 0 },
+        { author: 'user', text: 'three stages and a shared cache' },
+        { author: 'interviewer', remark: 'Sensible split — what broke first?', lang: 'en' },
+        { author: 'user', text: 'the cache did' },
+      ],
+      selected,
+    )
+
+    expect(assessment.askedCount).toBe(1)
+    expect(assessment.answeredCount).toBe(2)
+    expect(assessment.categories).toEqual(['linux'])
   })
 })
