@@ -3,6 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { useTranslation } from 'react-i18next'
 import { MockLlmBackend } from '../../api/llmClient'
+import type { MediaPipeLlmBackend } from '../../api/llm/mediaPipeBackend'
+import { buildRemarkPrompt, cleanRemark, hasReachedStop, type TranscriptTurn } from '../../api/llm/promptBuilder'
+import { selectLlmBackend } from '../../api/llm/selectBackend'
 import { INTERVIEWERS } from '../../domain/models/InterviewerProfile'
 import { QUESTION_BANKS, PIPELINE_QUESTION_SETS } from '../../domain/models/questionBank'
 import { STAGE3_REFERENCE_SOLUTIONS } from '../../domain/models/stage3Tasks'
@@ -49,7 +52,7 @@ export default function MeetSessionPage() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const { t, i18n } = useTranslation()
-  const { messages, selectedQuestions, finished, pendingQuestionIndex } = useSelector(
+  const { messages, selectedQuestions, finished, pendingQuestionIndex, questionCount } = useSelector(
     (state: RootState) => state.interview,
   )
   const { completedStages } = useSelector((state: RootState) => state.pipeline)
@@ -75,7 +78,16 @@ export default function MeetSessionPage() {
   /** Set when the browser has no voice at all for the interview language. */
   const [voiceUnavailable, setVoiceUnavailable] = useState(false)
   const [showReference, setShowReference] = useState(false)
+  /**
+   * True once the on-device model is loaded and this interview is genuinely
+   * being reacted to by it. Drives the badge — a candidate should never have to
+   * guess whether the person on screen is a model or a script.
+   */
+  const [onDevice, setOnDevice] = useState(false)
+  /** Paces out the bank questions, which are already written and translated. */
   const backendRef = useRef(new MockLlmBackend())
+  /** The real model, when this device has one. Null until it has loaded, and on most devices forever. */
+  const engineRef = useRef<MediaPipeLlmBackend | null>(null)
   const listeningHandleRef = useRef<ListeningHandle | null>(null)
   const capturedTranscriptRef = useRef(false)
   const historySavedRef = useRef(false)
@@ -150,6 +162,41 @@ export default function MeetSessionPage() {
   // the text — those are different moments, and the old wiring animated the
   // wrong one.
   useEffect(() => subscribeSpeaking(setSpeaking), [])
+
+  /**
+   * Loads the on-device model in the background, if this device has one.
+   *
+   * Deliberately not awaited by anything. Starting a MediaPipe graph over 528 MB
+   * of weights takes tens of seconds on the hardware this was measured on, and
+   * blocking the greeting on it would trade a working scripted interview for a
+   * loading screen. The interview runs from the first second either way; the
+   * model joins in when it is ready, and on most devices — no WebGPU, or no
+   * bundle imported — it never does, which is the state `selectLlmBackend`
+   * exists to report rather than hide.
+   */
+  useEffect(() => {
+    let cancelled = false
+    let loaded: MediaPipeLlmBackend | null = null
+
+    void selectLlmBackend().then((selection) => {
+      if (selection.kind !== 'mediapipe') return
+      const engine = selection.backend as MediaPipeLlmBackend
+      // Half a gigabyte of GPU memory belongs to a page that has already gone.
+      if (cancelled) {
+        engine.close()
+        return
+      }
+      loaded = engine
+      engineRef.current = engine
+      setOnDevice(true)
+    })
+
+    return () => {
+      cancelled = true
+      engineRef.current = null
+      loaded?.close()
+    }
+  }, [])
 
   // A locale with no installed voice produces silence rather than an error, so
   // without this the candidate just waits for audio that is never coming.
@@ -273,14 +320,104 @@ export default function MeetSessionPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang])
 
+  /** The conversation so far, in the form the prompt builder wants it. */
+  function transcriptTurns(): TranscriptTurn[] {
+    const turns: TranscriptTurn[] = []
+
+    for (const message of messages) {
+      if (message.author === 'user') {
+        turns.push({ role: 'candidate', text: message.text })
+        continue
+      }
+      if ('questionIndex' in message) {
+        const asked = selectedQuestions[message.questionIndex]?.[lang]
+        if (asked) turns.push({ role: 'interviewer', text: asked })
+        continue
+      }
+      if ('remark' in message) {
+        turns.push({ role: 'interviewer', text: message.remark })
+        continue
+      }
+      turns.push({
+        role: 'interviewer',
+        text: t(`interviewers.${interviewerId}.greeting`, { name: interviewer?.voiceName ?? '' }),
+      })
+    }
+
+    return turns
+  }
+
+  /**
+   * The model reacts, then the bank asks.
+   *
+   * Order is the whole feature. The remark is a reaction to what was just said,
+   * so it has to land before the next question changes the subject — and the
+   * next question is still the reducer's to choose, which is why this ends with
+   * the same intent-only dispatch it replaced rather than naming an index.
+   *
+   * Everything here is skippable by design: no model, no more questions, a
+   * generation that fails — each falls through to the question, because the
+   * interview is the product and the remark is a nicety on top of it.
+   */
+  async function reactThenAsk(answer: string) {
+    const engine = engineRef.current
+    // `questionCount` is the committed number of questions asked, so this is
+    // the same test the reducer will apply. Reacting after the final answer
+    // would put a follow-up on screen underneath the Session Summary.
+    const moreQuestionsComing = questionCount < selectedQuestions.length
+
+    if (!engine || !interviewer || !moreQuestionsComing) {
+      dispatch(requestNextQuestion())
+      return
+    }
+
+    const { voiceGender, voiceName, role } = interviewer
+    const prompt = buildRemarkPrompt({
+      personaName: voiceName,
+      personaRole: role,
+      lang,
+      transcript: [...transcriptTurns(), { role: 'candidate', text: answer }],
+    })
+
+    try {
+      let buffer = ''
+      let stopped = false
+
+      await engine.generate(prompt, (token) => {
+        // MediaPipe offers no way to abort a generation, so stopping means
+        // ignoring the rest of it: past `<end_of_turn>` the model is writing
+        // the candidate's lines for them.
+        if (stopped) return
+        buffer += token
+        if (hasReachedStop(buffer)) stopped = true
+        setStreaming(cleanRemark(buffer, voiceName))
+      })
+
+      const remark = cleanRemark(buffer, voiceName)
+      setStreaming('')
+
+      if (remark) {
+        dispatch(addMessage({ author: 'interviewer', remark, lang }))
+        await new Promise<void>((resolve) => speak(remark, lang, voiceGender, resolve))
+      }
+    } catch {
+      // A busy graph, a driver reset, a model that produced nothing usable. The
+      // candidate gets the next question rather than an error they cannot act on.
+      setStreaming('')
+    }
+
+    dispatch(requestNextQuestion())
+  }
+
   function sendMessage(text: string) {
     const trimmed = text.trim()
     if (!trimmed) return
     dispatch(addMessage({ author: 'user', text: trimmed }))
     setDraft('')
     // Intent only — the reducer decides which question is next, and rejects a
-    // second request while one is already open.
-    dispatch(requestNextQuestion())
+    // second request while one is already open. The remark, when there is one,
+    // goes in front of that intent rather than alongside it.
+    void reactThenAsk(trimmed)
   }
 
   function handleSend() {
@@ -355,10 +492,17 @@ export default function MeetSessionPage() {
   }
 
   const voiceName = interviewer.voiceName
-  function interviewerMessageText(m: { author: 'interviewer'; questionIndex: number } | { author: 'interviewer'; greeting: true }) {
-    return 'questionIndex' in m
-      ? selectedQuestions[m.questionIndex]?.[lang]
-      : t(`interviewers.${interviewerId}.greeting`, { name: voiceName })
+  function interviewerMessageText(
+    m:
+      | { author: 'interviewer'; questionIndex: number }
+      | { author: 'interviewer'; greeting: true }
+      | { author: 'interviewer'; remark: string; lang: 'en' | 'ua' },
+  ) {
+    if ('questionIndex' in m) return selectedQuestions[m.questionIndex]?.[lang]
+    // Held as text, and shown as it was said: a generated line has no key to
+    // look up in the other language (DIA-158).
+    if ('remark' in m) return m.remark
+    return t(`interviewers.${interviewerId}.greeting`, { name: voiceName })
   }
 
   const lastInterviewerMessage = [...messages].reverse().find((m) => m.author === 'interviewer')
@@ -417,6 +561,14 @@ export default function MeetSessionPage() {
                   for the toolbar under it. Bounded by both axes now. */}
               <AvatarTile interviewer={interviewer} isSpeaking={speaking} size="min(280px, 70vw, 45vh)" />
               <p style={{ marginTop: '0.75rem', fontWeight: 600 }}>{interviewer.voiceName}</p>
+              {/* Stated, never implied. A candidate is answering questions about
+                  their own career; whether a model on their machine is listening
+                  and replying is not something to leave them guessing about. */}
+              {onDevice && (
+                <p data-testid="engine-badge" style={{ margin: '0.15rem 0 0', color: '#9ca3af', fontSize: 12 }}>
+                  {t('meet.onDevice')}
+                </p>
+              )}
             </div>
           )}
 
