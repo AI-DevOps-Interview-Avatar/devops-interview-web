@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import reducer, { addMessage, requestNextQuestion, startInterview } from './interviewSlice'
+import reducer, { addMessage, generatedLanguage, requestNextQuestion, startInterview } from './interviewSlice'
 import type { BankQuestion } from '../domain/models/questionBank'
 
 function question(id: string): BankQuestion {
@@ -128,6 +128,27 @@ describe('a generated remark', () => {
     const last = state.messages.at(-1)
 
     expect(last).toEqual({ author: 'interviewer', remark: 'Розумно.', lang: 'ua' })
+  })
+})
+
+describe('generatedLanguage', () => {
+  it('reports the language a remark was written in', () => {
+    expect(generatedLanguage({ author: 'interviewer', remark: 'Розумно.', lang: 'ua' })).toBe('ua')
+    expect(generatedLanguage({ author: 'interviewer', remark: 'Good.', lang: 'en' })).toBe('en')
+  })
+
+  it('reports nothing for the lines that re-translate on a switch', () => {
+    // Both hold a lookup rather than words: a question its index, the greeting
+    // its i18n key. Marking either would put "said in English" on a sentence
+    // that is already Ukrainian on screen.
+    expect(generatedLanguage({ author: 'interviewer', questionIndex: 0 })).toBeNull()
+    expect(generatedLanguage({ author: 'interviewer', greeting: true })).toBeNull()
+  })
+
+  it('reports nothing for the candidate, whose answers are never translated either', () => {
+    // Deliberate: they are stuck in their original language too, and telling
+    // someone which language they typed in is noise. See docs/language-switching.md.
+    expect(generatedLanguage({ author: 'user', text: 'Мій досвід — чотири роки.' })).toBeNull()
   })
 })
 
