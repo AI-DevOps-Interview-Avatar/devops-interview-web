@@ -11,7 +11,7 @@ import { QUESTION_BANKS, PIPELINE_QUESTION_SETS } from '../../domain/models/ques
 import { STAGE3_REFERENCE_SOLUTIONS } from '../../domain/models/stage3Tasks'
 import { assessSession, sessionLevel } from '../../domain/assessment'
 import { canEnterStage, OFFER_STAGE_INDEX, PIPELINE_STAGES } from '../../domain/pipeline'
-import { addMessage, MAX_QUESTIONS, requestNextQuestion, startInterview } from '../../store/interviewSlice'
+import { addMessage, generatedLanguage, MAX_QUESTIONS, requestNextQuestion, startInterview } from '../../store/interviewSlice'
 import { completeStage } from '../../store/pipelineSlice'
 import { appendHistory } from '../../store/historySlice'
 import { shuffle } from '../../shared/lib/shuffle'
@@ -19,6 +19,7 @@ import { AvatarTile } from '../../shared/ui/AvatarTile'
 import { LanguageSwitcher } from '../../shared/ui/LanguageSwitcher'
 import { PageNav } from '../../shared/ui/PageNav'
 import { SelfCameraTile } from '../../shared/ui/SelfCameraTile'
+import { TranscriptMessage } from './TranscriptMessage'
 import {
   CallEndIcon,
   CaptionsIcon,
@@ -500,7 +501,8 @@ export default function MeetSessionPage() {
   ) {
     if ('questionIndex' in m) return selectedQuestions[m.questionIndex]?.[lang]
     // Held as text, and shown as it was said: a generated line has no key to
-    // look up in the other language (DIA-158).
+    // look up in the other language. The transcript labels it instead — see
+    // `docs/language-switching.md` (DIA-158).
     if ('remark' in m) return m.remark
     return t(`interviewers.${interviewerId}.greeting`, { name: voiceName })
   }
@@ -732,25 +734,19 @@ export default function MeetSessionPage() {
         <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {messages.map((m, idx) => {
               const isTask = m.author === 'interviewer' && 'questionIndex' in m && Boolean(selectedQuestions[m.questionIndex]?.isTaskPrompt)
+              // A generated remark keeps the language it was spoken in, so once
+              // the candidate switches, the transcript legitimately holds two.
+              // Saying which is which is the price of not re-generating it.
+              const saidIn = generatedLanguage(m)
               return (
-                <div
+                <TranscriptMessage
                   key={idx}
-                  data-testid="message"
-                  data-author={m.author}
-                  style={{
-                    alignSelf: m.author === 'user' ? 'flex-end' : 'flex-start',
-                    background: m.author === 'user' ? interviewer.color : '#2a2b33',
-                    color: m.author === 'user' ? '#1c1d23' : '#f3f4f6',
-                    borderRadius: 12,
-                    padding: '0.5rem 0.75rem',
-                    maxWidth: isTask ? '100%' : '85%',
-                    whiteSpace: 'pre-wrap',
-                    fontFamily: isTask ? 'monospace' : undefined,
-                    fontSize: isTask ? 12 : undefined,
-                  }}
-                >
-                  {m.author === 'user' ? m.text : interviewerMessageText(m)}
-                </div>
+                  message={m}
+                  text={m.author === 'interviewer' ? interviewerMessageText(m) : undefined}
+                  accentColor={interviewer.color}
+                  isTask={isTask}
+                  languageNote={saidIn && saidIn !== lang ? t(`meet.saidIn.${saidIn}`) : undefined}
+                />
               )
             })}
             {streaming && (

@@ -119,6 +119,8 @@ Pushing to `main` automatically builds and publishes the site via `.github/workf
 
 The UI defaults to English regardless of browser locale; a switcher (top-right on every screen) toggles to Ukrainian. Translation strings live in `public/locales/{en,ua}/translation.json`. Documentation in this repository is maintained in English going forward.
 
+The switcher stays live in the middle of an interview, which is the case worth specifying rather than discovering: anything with a translation switches immediately, while a line that was *produced* — an answer the candidate wrote, a remark the on-device model wrote — keeps the language it was produced in, and the transcript says which. The full contract is in [`docs/language-switching.md`](docs/language-switching.md).
+
 ## Avatars
 
 The four `.riv` character rigs in `public/avatars/` are shared with `devops-interview-apple`, each driven by a state machine named `State Machine 1` with a boolean `speak` input. Three of the four are free community rigs licensed **CC BY 4.0** — attribution is required if this app or its assets are redistributed:

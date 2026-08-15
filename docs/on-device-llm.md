@@ -10,9 +10,11 @@ onto that machine and verify them; an offer that reaches the candidate rather
 than waiting on a diagnostics page; and a prompt that makes the model behave like
 an interviewer rather than a completion engine.
 
-What is still open is written down where it belongs: the language of a generated
-line on a mid-interview switch (DIA-158), and the quality of Ukrainian output
-from a 1B model (DIA-207).
+What a generated line does when the candidate switches language mid-interview is
+no longer open: it keeps the language it was written in and says so, specified
+with the rest of the switching contract in
+[`docs/language-switching.md`](language-switching.md) (DIA-158). What is still
+open is the quality of Ukrainian output from a 1B model (DIA-207).
 
 ## What was open, and what the answer turned out to be
 

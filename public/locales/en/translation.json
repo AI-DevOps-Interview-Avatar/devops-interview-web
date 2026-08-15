@@ -77,7 +77,11 @@
       },
       "voiceUnavailable": "This browser has no voice for the interview language: the recruiters will all sound alike, or stay silent. The interview works in text — or install the language's speech pack in your system settings."
     },
-    "onDevice": "Answering on-device"
+    "onDevice": "Answering on-device",
+    "saidIn": {
+      "en": "Said in English",
+      "ua": "Said in Ukrainian"
+    }
   },
   "history": {
     "title": "Interview History",

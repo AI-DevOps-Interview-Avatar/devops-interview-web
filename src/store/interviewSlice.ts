@@ -23,6 +23,22 @@ export type ChatMessage =
    */
   | { author: 'interviewer'; remark: string; lang: 'en' | 'ua' }
 
+/**
+ * The language a line is stuck in, or null when it re-translates on a switch.
+ *
+ * Only generated interviewer lines qualify. A bank question holds an index and
+ * the greeting holds a key, so both follow the switcher; a remark holds the
+ * words the model actually produced and cannot follow anything.
+ *
+ * The candidate's own answers are stuck too, and are deliberately not reported
+ * here — nobody needs telling which language they typed in themselves. The
+ * reasoning for both halves is in `docs/language-switching.md` (DIA-158).
+ */
+export function generatedLanguage(message: ChatMessage): 'en' | 'ua' | null {
+  if (message.author === 'interviewer' && 'remark' in message) return message.lang
+  return null
+}
+
 interface InterviewState {
   interviewerId: string | null
   /** The subset (random for practice, fixed script for pipeline stages) of the persona's questions picked for this session. */
