@@ -84,7 +84,14 @@ export function thresholdsFor(env = process.env) {
  * permission, and Lighthouse driving it would measure the stub, not the app.
  * Its accessibility is covered by e2e/lifecycle.spec.ts instead.
  */
-export const ROUTES = ['/', '/interview', '/pipeline']
+// TEMPORARY diagnostic for DIA-201: /pipeline appears twice, first and last,
+// to test whether its 99 is really "no Rive" or an artifact of running third
+// in a browser that DIA-201's own fix (priority: 'low' + idle-deferred
+// prefetch) already showed made no measurable difference. If the first
+// /pipeline scores near 86-88 and the second near 99, the gap this ticket is
+// chasing is a same-browser warm-cache/warm-code bias in this script, not a
+// Rive cost. Revert to ['/', '/interview', '/pipeline'] once read.
+export const ROUTES = ['/pipeline', '/', '/interview', '/pipeline']
 
 const CATEGORIES = Object.keys(THRESHOLDS)
 
