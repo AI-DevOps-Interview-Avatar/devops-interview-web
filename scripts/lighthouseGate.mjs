@@ -172,7 +172,15 @@ async function main() {
       const scores = Object.fromEntries(
         CATEGORIES.map((category) => [category, result.lhr.categories[category]?.score]),
       )
-      runs.push({ url: route, scores })
+      // Category scores say a route regressed; they don't say what to fix.
+      // These three audits are where DIA-201 starts: a CI-measured baseline
+      // for the routes that draw Rive avatars, taken before any optimization.
+      const metrics = {
+        tbt: result.lhr.audits['total-blocking-time']?.numericValue,
+        lcp: result.lhr.audits['largest-contentful-paint']?.numericValue,
+        speedIndex: result.lhr.audits['speed-index']?.numericValue,
+      }
+      runs.push({ url: route, scores, metrics })
     }
 
     return runs
@@ -197,6 +205,16 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   for (const run of runs) {
     const cells = CATEGORIES.map((c) => String(pct(run.scores[c] ?? NaN)).padStart(7))
     console.log([run.url.padEnd(12), ...cells].join(' '))
+  }
+
+  // ms, not the 0-1 scores above — DIA-201's first acceptance criterion is a
+  // CI-measured reading of these three for `/` and `/interview`, so they're
+  // printed every run rather than gathered by hand once and then forgotten.
+  const msHeader = ['route'.padEnd(12), 'TBT'.padStart(7), 'LCP'.padStart(7), 'SI'.padStart(7)].join(' ')
+  console.log(msHeader)
+  for (const run of runs) {
+    const cell = (v) => (typeof v === 'number' ? String(Math.round(v)) : 'n/a').padStart(7)
+    console.log([run.url.padEnd(12), cell(run.metrics.tbt), cell(run.metrics.lcp), cell(run.metrics.speedIndex)].join(' '))
   }
 
   const failures = checkScores(runs, thresholds)
