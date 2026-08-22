@@ -29,7 +29,12 @@ export function loadRiveBuffer(url: string): Promise<ArrayBuffer> {
   const pending = inFlight.get(url)
   if (pending) return pending
 
-  const request = fetch(url)
+  // 'low': a face is never the resource that has to paint first. Left at the
+  // browser's default the four requests firing together on mount competed
+  // with whatever *is* — DIA-201 measured this as an 11-13 point LCP hit on
+  // every route that touches this cache, including the splash screen, which
+  // draws no avatar at all.
+  const request = fetch(url, { priority: 'low' })
     .then((response) => {
       if (!response.ok) throw new Error(`Rive asset ${url} responded ${response.status}`)
       return response.arrayBuffer()
