@@ -17,8 +17,23 @@ export default function SplashPage() {
   // The bootstrap bar runs for about a second and a half — enough to pull every
   // avatar into the buffer cache, so the selection screen behind it paints
   // finished faces instead of placeholders.
+  //
+  // Deferred past idle rather than fired on mount: this screen draws no
+  // avatar at all, yet DIA-201 measured its LCP taking the same ~1.5s hit as
+  // /interview, which does. Four requests opened the instant this component
+  // mounts compete with the title text this page actually needs to paint
+  // first; idle callback lets that paint happen, then spends the bootstrap
+  // bar's remaining time warming the cache same as before.
   useEffect(() => {
-    prefetchRiveBuffers(INTERVIEWERS.map((profile) => riveAssetUrl(profile.riveFile)))
+    const urls = INTERVIEWERS.map((profile) => riveAssetUrl(profile.riveFile))
+    const runPrefetch = () => prefetchRiveBuffers(urls)
+
+    if (typeof requestIdleCallback === 'function') {
+      const handle = requestIdleCallback(runPrefetch)
+      return () => cancelIdleCallback(handle)
+    }
+    const timer = setTimeout(runPrefetch, 0)
+    return () => clearTimeout(timer)
   }, [])
 
   useEffect(() => {
