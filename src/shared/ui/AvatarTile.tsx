@@ -32,14 +32,35 @@ interface AvatarTileProps {
    * phone in landscape; the card screens pass a fixed number.
    */
   size?: number | string
+  /**
+   * Off by default, which keeps the meet-session avatar — the one screen
+   * where a live face is the point — animating from the moment it mounts.
+   *
+   * On: the state machine renders its first frame and then holds still, an
+   * idle rig costing the main thread nothing, until a pointer or keyboard
+   * focus lands on the tile. Four rigs running their loop at once on
+   * `/interview` before the candidate has picked anyone was the bulk of the
+   * 11-13 Lighthouse points DIA-201 measured against `/pipeline` — nobody is
+   * watching any of those faces yet.
+   */
+  interactive?: boolean
 }
 
-export function AvatarTile({ interviewer, isSpeaking, size = 320 }: AvatarTileProps) {
+export function AvatarTile({ interviewer, isSpeaking, size = 320, interactive = false }: AvatarTileProps) {
   const src = riveAssetUrl(interviewer.riveFile)
   // Keyed on the asset so a persona swap remounts the loader: its cache lookup
   // then runs fresh, which is what keeps a cached avatar from ever flashing
   // its placeholder.
-  return <AvatarCanvas key={src} src={src} interviewer={interviewer} isSpeaking={isSpeaking} size={size} />
+  return (
+    <AvatarCanvas
+      key={src}
+      src={src}
+      interviewer={interviewer}
+      isSpeaking={isSpeaking}
+      size={size}
+      interactive={interactive}
+    />
+  )
 }
 
 function AvatarCanvas({
@@ -47,10 +68,14 @@ function AvatarCanvas({
   interviewer,
   isSpeaking,
   size,
+  interactive,
 }: Required<AvatarTileProps> & { src: string }) {
   // A cache hit resolves during the very first render, so a return trip to Home
   // paints the finished avatar immediately instead of a placeholder that swaps.
   const [buffer, setBuffer] = useState(() => getCachedRiveBuffer(src))
+  // Only read when `interactive` — a hover or a keyboard focus is the signal
+  // that this particular face is the one the candidate is looking at.
+  const [engaged, setEngaged] = useState(false)
 
   useEffect(() => {
     if (buffer) return
@@ -77,6 +102,12 @@ function AvatarCanvas({
     <div
       data-testid="avatar"
       data-interviewer-id={interviewer.id}
+      // Handlers are harmless no-ops on a non-interactive tile (meet-session):
+      // `engaged` is simply never read there.
+      onMouseEnter={interactive ? () => setEngaged(true) : undefined}
+      onMouseLeave={interactive ? () => setEngaged(false) : undefined}
+      onFocus={interactive ? () => setEngaged(true) : undefined}
+      onBlur={interactive ? () => setEngaged(false) : undefined}
       style={{
         ...sizing,
         width: 'var(--avatar-size)',
@@ -90,7 +121,12 @@ function AvatarCanvas({
       }}
     >
       {buffer ? (
-        <RiveStage buffer={buffer} interviewer={interviewer} isSpeaking={isSpeaking} />
+        <RiveStage
+          buffer={buffer}
+          interviewer={interviewer}
+          isSpeaking={isSpeaking}
+          active={!interactive || engaged}
+        />
       ) : (
         // Overlaid on the same circle rather than laid out beside it — the
         // placeholder occupies the finished avatar's box exactly, so nothing
@@ -120,10 +156,17 @@ function RiveStage({
   buffer,
   interviewer,
   isSpeaking,
+  active,
 }: {
   buffer: ArrayBuffer
   interviewer: InterviewerProfile
   isSpeaking: boolean
+  /**
+   * False parks the state machine on its first frame instead of looping it —
+   * the canvas still exists and still shows a face, it just costs nothing
+   * per frame until this flips.
+   */
+  active: boolean
 }) {
   const stateMachine = interviewer.stateMachine ?? DEFAULT_STATE_MACHINE
   const scale = interviewer.avatarScale ?? 1
@@ -136,9 +179,21 @@ function RiveStage({
     // make them contend for it.
     buffer: buffer.slice(0),
     stateMachines: stateMachine,
-    autoplay: true,
+    // Rive still renders the state machine's initial pose once on load
+    // whether or not this is true — it only decides whether the loop keeps
+    // ticking afterwards, which is the part that is expensive four times over.
+    autoplay: active,
     layout: new Layout({ fit, alignment: Alignment.Center }),
   })
+
+  useEffect(() => {
+    if (!rive) return
+    if (active) {
+      rive.play(stateMachine)
+    } else {
+      rive.pause(stateMachine)
+    }
+  }, [rive, active, stateMachine])
 
   useEffect(() => {
     if (!rive) return
