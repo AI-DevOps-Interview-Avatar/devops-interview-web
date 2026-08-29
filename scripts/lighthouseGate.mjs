@@ -171,9 +171,22 @@ async function main() {
 
     const runs = []
     for (const route of ROUTES) {
-      const url = new URL(route.replace(/^\//, ''), base).href
-      const result = await lighthouse(url, { port: debugPort, output: 'json', logLevel: 'error' }, desktopConfig)
-      if (!result?.lhr) throw new Error(`Lighthouse returned no report for ${url}`)
+      const url = new URL(route.replace(/^\//, ''), base)
+      // DIA-201: `/` auto-navigates to `/interview` on its own bootstrap timer
+      // (SplashPage, ~1.8s), well inside the window Lighthouse watches after
+      // load. Left alone, this audit doesn't measure the splash screen — it
+      // measures splash, the client-side redirect, and the first paint of
+      // /interview, all timestamped from `/`'s own navigation start. That's
+      // why the run 33259927905 dump found rive.wasm and every avatar asset
+      // in `/`'s network log despite the splash screen drawing no avatar, and
+      // why its LCP (2372-2385ms across four separate runs) never moved for
+      // three fixes aimed at Rive or i18n: it's a fixed timer chain, not
+      // something those touch. `lhAuditIsolation` tells SplashPage to hold
+      // still so the gate measures what its own comment already claims to.
+      if (route === '/') url.searchParams.set('lhAuditIsolation', '1')
+
+      const result = await lighthouse(url.href, { port: debugPort, output: 'json', logLevel: 'error' }, desktopConfig)
+      if (!result?.lhr) throw new Error(`Lighthouse returned no report for ${url.href}`)
 
       const scores = Object.fromEntries(
         CATEGORIES.map((category) => [category, result.lhr.categories[category]?.score]),
@@ -187,24 +200,6 @@ async function main() {
         speedIndex: result.lhr.audits['speed-index']?.numericValue,
       }
       runs.push({ url: route, scores, metrics })
-
-      // TEMPORARY diagnostic for DIA-201: the preload in index.html (this
-      // ticket) moved `/`'s LCP by 0ms — 2372ms before, 2380ms after — so the
-      // i18n-fetch theory it was built on is wrong. Dumping what Lighthouse
-      // actually names as the LCP element and the request timeline to find
-      // out what the real 2.3s is. Revert once read.
-      if (route === '/') {
-        const lcpElement = result.lhr.audits['largest-contentful-paint-element']
-        console.log('--- DIA-201 diagnostic: LCP element for / ---')
-        console.log(JSON.stringify(lcpElement?.details?.items ?? lcpElement, null, 2))
-        const requests = result.lhr.audits['network-requests']?.details?.items ?? []
-        console.log('--- DIA-201 diagnostic: network requests for / (url, start, end, transferSize) ---')
-        for (const req of requests) {
-          console.log(
-            `${Math.round(req.startTime)}ms -> ${Math.round(req.endTime)}ms  ${req.transferSize}B  ${req.url}`,
-          )
-        }
-      }
     }
 
     return runs

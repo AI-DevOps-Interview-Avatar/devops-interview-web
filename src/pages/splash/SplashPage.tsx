@@ -14,6 +14,17 @@ export default function SplashPage() {
   const navigate = useNavigate()
   const { t } = useTranslation()
 
+  // Set only by the Lighthouse gate (scripts/lighthouseGate.mjs) on the `/`
+  // route. Without it, this screen's own bootstrap timer forwards to
+  // /interview after ~1.8s — well inside the window Lighthouse watches after
+  // load, so the gate ended up scoring splash, the redirect and the first
+  // paint of /interview as one load. Read once: a language switch or any
+  // other re-render must not have the flag start being honoured or dropped
+  // mid-audit.
+  const [auditIsolation] = useState(
+    () => new URLSearchParams(window.location.search).get('lhAuditIsolation') === '1',
+  )
+
   // The bootstrap bar runs for about a second and a half — enough to pull every
   // avatar into the buffer cache, so the selection screen behind it paints
   // finished faces instead of placeholders.
@@ -42,13 +53,13 @@ export default function SplashPage() {
         const next = Math.min(prev + 10, 100)
         if (next === 100) {
           clearInterval(interval)
-          setTimeout(() => navigate('/interview'), 300)
+          if (!auditIsolation) setTimeout(() => navigate('/interview'), 300)
         }
         return next
       })
     }, 150)
     return () => clearInterval(interval)
-  }, [navigate])
+  }, [navigate, auditIsolation])
 
   return (
     <main
