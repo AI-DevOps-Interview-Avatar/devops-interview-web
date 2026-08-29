@@ -76,7 +76,7 @@ export default function InterviewerSelectionPage() {
                 color: 'inherit',
               } as CSSProperties}
             >
-              <AvatarTile interviewer={interviewer} isSpeaking={false} size={72} />
+              <AvatarTile interviewer={interviewer} isSpeaking={false} size={72} interactive />
               <div>
                 <h2 style={{ margin: 0 }}>{interviewer.role}</h2>
                 <p style={{ margin: '2px 0', color: '#9ca3af' }}>{interviewer.voiceName}</p>

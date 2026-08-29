@@ -83,7 +83,7 @@ export default function PipelineHomePage() {
               }}
             >
               {interviewer ? (
-                <AvatarTile interviewer={interviewer} isSpeaking={false} size={56} />
+                <AvatarTile interviewer={interviewer} isSpeaking={false} size={56} interactive />
               ) : (
                 <div
                   style={{
