@@ -15,6 +15,24 @@
       name="description"
       content="Practise DevOps interviews with four AI personas: recruiter screening, technical rounds, live coding and a culture-fit interview. Runs entirely in your browser — nothing is sent to a server."
     />
+    <!--
+      DIA-201: the whole app suspends on this fetch (src/main.tsx's Suspense
+      boundary, one level up from every useTranslation() call), so on a cold
+      cache it sits between the JS bundle finishing and the first real paint.
+      Left to i18next-http-backend the request only starts once i18n.ts has
+      run, i.e. after the module graph is fetched and parsed; the preload
+      starts it the moment the HTML is parsed, in parallel with that.
+
+      Only `en`: it's the default for every visitor who has never switched
+      language (Lighthouse always audits with empty storage), and a returning
+      `ua` visitor pays one wasted preload against a locales/ payload already
+      small enough not to matter.
+
+      `crossorigin` is required for `as="fetch"` even same-origin — without it
+      the request mode doesn't match `fetch()`'s default and the browser
+      fetches the file twice instead of reusing the preload.
+    -->
+    <link rel="preload" href="/locales/en/translation.json" as="fetch" crossorigin="anonymous" />
     <title>DevOps Interview AI — Web</title>
   </head>
   <body>
