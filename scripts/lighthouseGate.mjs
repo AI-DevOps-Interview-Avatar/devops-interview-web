@@ -187,6 +187,24 @@ async function main() {
         speedIndex: result.lhr.audits['speed-index']?.numericValue,
       }
       runs.push({ url: route, scores, metrics })
+
+      // TEMPORARY diagnostic for DIA-201: the preload in index.html (this
+      // ticket) moved `/`'s LCP by 0ms — 2372ms before, 2380ms after — so the
+      // i18n-fetch theory it was built on is wrong. Dumping what Lighthouse
+      // actually names as the LCP element and the request timeline to find
+      // out what the real 2.3s is. Revert once read.
+      if (route === '/') {
+        const lcpElement = result.lhr.audits['largest-contentful-paint-element']
+        console.log('--- DIA-201 diagnostic: LCP element for / ---')
+        console.log(JSON.stringify(lcpElement?.details?.items ?? lcpElement, null, 2))
+        const requests = result.lhr.audits['network-requests']?.details?.items ?? []
+        console.log('--- DIA-201 diagnostic: network requests for / (url, start, end, transferSize) ---')
+        for (const req of requests) {
+          console.log(
+            `${Math.round(req.startTime)}ms -> ${Math.round(req.endTime)}ms  ${req.transferSize}B  ${req.url}`,
+          )
+        }
+      }
     }
 
     return runs
