@@ -1,6 +1,7 @@
 import { lazy, useEffect, type ComponentType, type LazyExoticComponent } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import SplashPage from './pages/splash/SplashPage'
+import { ProGate } from './shared/ui/ProGate'
 
 /**
  * Every screen except the splash is loaded on demand.
@@ -34,6 +35,7 @@ const ResumeReviewPage = lazyPage(() => import('./pages/resume-review/ResumeRevi
 const JobResourcesPage = lazyPage(() => import('./pages/resources/JobResourcesPage'))
 const DevelopersPage = lazyPage(() => import('./pages/developers/DevelopersPage'))
 const EngineCheckPage = lazyPage(() => import('./pages/engine/EngineCheckPage'))
+const ProPage = lazyPage(() => import('./pages/pro/ProPage'))
 
 /**
  * The two screens the splash leads to, fetched while it counts up rather than
@@ -76,8 +78,25 @@ function App() {
         <Route path="/pipeline" element={<PipelineHomePage />} />
         <Route path="/pipeline/stage/:stageIndex" element={<MeetSessionPage />} />
         <Route path="/pipeline/offer" element={<OfferPage />} />
-        <Route path="/practice" element={<PracticeHubPage />} />
-        <Route path="/resume-review" element={<ResumeReviewPage />} />
+        {/* Gated at the route, not at the link: a bookmark or a shared URL is
+            exactly how someone reaches a paid screen without passing a pill. */}
+        <Route
+          path="/practice"
+          element={
+            <ProGate feature="practice">
+              <PracticeHubPage />
+            </ProGate>
+          }
+        />
+        <Route
+          path="/resume-review"
+          element={
+            <ProGate feature="resumeReview">
+              <ResumeReviewPage />
+            </ProGate>
+          }
+        />
+        <Route path="/pro" element={<ProPage />} />
         <Route path="/resources" element={<JobResourcesPage />} />
         <Route path="/developers" element={<DevelopersPage />} />
         <Route path="/history" element={<HistoryPage />} />

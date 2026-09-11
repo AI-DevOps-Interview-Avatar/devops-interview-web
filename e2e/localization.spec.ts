@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { installSpeechStub } from './speechStub'
-import { CYRILLIC, interviewerTurns, seedLanguage, waitForQuestion } from './session'
+import { CYRILLIC, interviewerTurns, seedLanguage, seedPro, waitForQuestion } from './session'
 
 /**
  * Localization, including the case the QA report kept hitting: switching
@@ -74,12 +74,15 @@ test.describe('mid-interview language switch', () => {
 })
 
 test.describe('no English fallback in Ukrainian', () => {
-  const screens = ['', 'interview', 'pipeline', 'practice', 'resources', 'history', 'developers', 'engine']
+  const screens = ['', 'interview', 'pipeline', 'practice', 'resume-review', 'pro', 'resources', 'history', 'developers', 'engine']
 
   for (const screen of screens) {
     test(`${screen || 'splash'} is fully translated`, async ({ page }) => {
       await installSpeechStub(page, { voices: 'chrome' })
       await seedLanguage(page, 'ua')
+      // The paid screens redirect to the pricing page without it, and a locale
+      // check that never reaches the screen it names proves nothing.
+      await seedPro(page)
 
       await page.goto(screen)
       const body = page.locator('body')

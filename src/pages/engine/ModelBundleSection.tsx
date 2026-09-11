@@ -31,7 +31,7 @@ import {
  * DIA-98 turned it from a mechanism into a path. What was missing was never the
  * progress bar — it was that nobody arrived here: `/engine` was a diagnostics
  * page reachable only by someone who already knew to look. The invitation now
- * comes to the candidate on the selection screen (`LocalModelInvite`), this
+ * comes to the candidate on the selection screen (`EngineNote`), this
  * section leads with what the model buys rather than what it costs, and a
  * finished import ends in a link back to an interview instead of a stored-file
  * receipt.

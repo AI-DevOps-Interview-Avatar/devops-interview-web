@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import { installSpeechStub } from './speechStub'
-import { seedLanguage, seedPipelineProgress, waitForQuestion } from './session'
+import { seedLanguage, seedPipelineProgress, seedPro, waitForQuestion } from './session'
 
 /**
  * The acceptance criteria of DIA-161, as assertions.
@@ -20,12 +20,20 @@ const WIDTHS = [320, 375, 768, 1024, 1440, 1920] as const
 /** Height matters as little as it can here: 640 is a short phone, and short is the harder case. */
 const VIEWPORT_HEIGHT = 640
 
-/** Every route that renders without seeded state. */
+/**
+ * Every route that renders without seeded interview state.
+ *
+ * `practice` and `resume-review` need the Pro entitlement since DIA-218 —
+ * without it they redirect to the pricing screen, and this suite would be
+ * measuring `pro` three times over instead of the two screens it names. So the
+ * tests below seed it: the paid screens still have to fit a 320px phone.
+ */
 const STATIC_ROUTES = [
   'interview',
   'pipeline',
   'practice',
   'resume-review',
+  'pro',
   'resources',
   'developers',
   'history',
@@ -80,6 +88,7 @@ test.describe('every screen fits the viewport it is given', () => {
       await page.setViewportSize({ width, height: VIEWPORT_HEIGHT })
       await installSpeechStub(page, { voices: 'chrome' })
       await seedLanguage(page, 'ua')
+      await seedPro(page)
 
       for (const route of STATIC_ROUTES) {
         await page.goto(route)
@@ -316,6 +325,7 @@ test.describe('text keeps its contrast', () => {
       await page.setViewportSize({ width: 375, height: VIEWPORT_HEIGHT })
       await installSpeechStub(page, { voices: 'chrome' })
       await seedLanguage(page, 'ua')
+      await seedPro(page)
 
       await page.goto(route)
       await expect(page.locator('main')).toBeVisible()

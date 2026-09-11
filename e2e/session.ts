@@ -41,6 +41,23 @@ export async function seedLanguage(page: Page, lang: 'en' | 'ua'): Promise<void>
   }, lang)
 }
 
+/**
+ * Grants the Pro entitlement, so a test about the Practice or Resume Review
+ * screen can reach it rather than testing the gate for the tenth time.
+ *
+ * That this is a one-line `setItem` is not a gap in the seed — it is the whole
+ * truth about the gate. There is no server to ask, so the entitlement is a local
+ * flag; see the note at the top of `src/domain/pro.ts`.
+ */
+export async function seedPro(page: Page, plan: 'monthly' | 'yearly' | 'lifetime' = 'yearly'): Promise<void> {
+  await page.addInitScript((value: string) => {
+    localStorage.setItem(
+      'devops-interview-web:pro-entitlement',
+      JSON.stringify({ plan: value, since: new Date().toISOString() }),
+    )
+  }, plan)
+}
+
 export const interviewerMessages = (page: Page) => page.locator('[data-testid="message"][data-author="interviewer"]')
 export const userMessages = (page: Page) => page.locator('[data-testid="message"][data-author="user"]')
 

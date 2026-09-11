@@ -28,8 +28,8 @@ your device can run the interviewer on-device before anything is downloaded:
 ## What it does
 
 - **Full 5-stage hiring pipeline** — Recruiter (Emma) → Senior DevOps (Marcus) → CTO (David) → Project Manager (Olivia) → Final Offer, each stage unlocking after the previous one is completed
-- **Practice & Self-Prep hub** — browse the full interview question bank per persona, or self-test with a quiz (randomized set on every visit)
-- **Resume Review** — paste resume text and get an automated improvement checklist, entirely client-side (nothing is sent to a server)
+- **Practice & Self-Prep hub** *(Pro)* — browse the full interview question bank per persona, or self-test with a quiz (randomized set on every visit)
+- **Resume Review** *(Pro)* — paste resume text and get an automated improvement checklist, entirely client-side (nothing is sent to a server)
 - **Job search resources** — curated sites, Telegram channels, and tips for finding DevOps roles
 - **Meet-style call UI** — the AI interviewer sits in a video-call tile (Rive avatar, live captions), your camera preview in the corner, in-call chat panel for typed answers
 - **Voice input/output** — Web Speech API for speech-to-text answers, SpeechSynthesis TTS for the interviewer, with continuous-listening recovery so answers don't get cut off mid-thought
@@ -38,6 +38,8 @@ your device can run the interviewer on-device before anything is downloaded:
 - **Local engine check** — whether this device can run Gemma 3 1B on-device, reported requirement by requirement (WebGPU, WASM SIMD, model bundle) instead of one blank failure
 
 All inference and state stay in the browser — no backend server, no API keys, no account.
+
+The two screens marked *(Pro)* sit behind a plan (**[DIA-218](https://devops-interview-ai.atlassian.net/browse/DIA-218)**); `/pro` lists the prices. **Payments are not live**: this is a static site with no server, so there is nothing to verify a charge against and the pricing screen says so out loud. The entitlement is a `localStorage` flag under the app's own namespace — a product boundary, not a security one, and `src/domain/pro.ts` is explicit about the difference.
 
 ## Architecture
 

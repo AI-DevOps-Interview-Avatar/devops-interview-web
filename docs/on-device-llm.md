@@ -118,7 +118,7 @@ for a reason nobody could guess.
 
 Everything above shipped behind `/engine`, a diagnostics page reachable only by
 someone who already knew to look for it. The weights are not something a person
-goes hunting for, so the offer goes to them: `LocalModelInvite` appears on the
+goes hunting for, so the offer goes to them: `EngineNote` appears on the
 interviewer selection screen, under the privacy note.
 
 It is shown only when all three are true, and the strictness is the feature:
@@ -128,6 +128,14 @@ It is shown only when all three are true, and the strictness is the feature:
 | `requestAdapter()` returns an adapter | Most visitors have no WebGPU. Inviting them to fetch 528 MB they cannot use is worse than saying nothing |
 | No bundle stored yet | Otherwise it advertises something already done |
 | Not dismissed before | "Not now" is remembered, under the shared storage namespace, so *Clear my data* resets it with everything else |
+
+When any of the three is false the same aside falls back to a one-line prompt to
+run the check (DIA-218) rather than disappearing. That replaced the `/engine`
+nav pill: a diagnostic drawn like a feature, between *Job search resources* and
+*History*, was being read as a sixth thing to try, and it also meant a visitor
+who once said "not now" had no way back to the offer. The check state carries
+`data-testid="engine-check-note"`; only the invitation carries `engine-invite`,
+which is what the acceptance suite keys off.
 
 The banner asks the GPU **twice**, a second apart, and `/engine` asks once. That
 asymmetry is deliberate and was measured: on a cold browser profile Chrome's GPU
