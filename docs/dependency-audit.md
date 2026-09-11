@@ -89,6 +89,23 @@ a patch exists inside the range already declared, taking it is cheaper than the
 paragraph justifying why we did not, and it leaves no review date for someone to
 inherit.
 
+## The browserslist findings (DIA-210)
+
+Two high advisories at once, both against `browserslist@4.28.6`:
+
+| Advisory | What it is |
+|---|---|
+| GHSA-c83g-rgw3-j3cx | Unbounded memory growth — the query cache never evicts, so distinct queries grow it until the process runs out of memory |
+| GHSA-73wf-gq98-2v4g | Uncaught crash / prototype write in `normalizeStats()`, via an untrusted `browserslist-stats.json` |
+
+Reached as `eslint-plugin-react-hooks → @babel/core → @babel/helper-compilation-targets → browserslist`, and nothing here declares it. Both cover `<=4.28.6`; `@babel/helper-compilation-targets` asks for `^4.24.0`, so `4.28.9` was already inside the range it declared and `npm update browserslist` took it — `package-lock.json` only, no direct dependency moved.
+
+**Fourth time the gate has gone red on an unchanged tree**, after DIA-200, DIA-204 and DIA-206. That is worth stating plainly, because the instinct on a red CI is to look at your own diff, and four times running the answer has not been there. The advisory database moves on its own schedule; the tree standing still is normal.
+
+Neither advisory is reachable from this app — `browserslist` runs at build time inside Babel's target resolution, never ships to the browser, and nothing here feeds it a custom `browserslist-stats.json`. As with nanoid, that argument was available and not used: a patch inside an already-declared range is cheaper than the paragraph explaining why we skipped it, and it leaves no review date for someone to inherit.
+
+Three moderate advisories in `vitest` / `@vitest/mocker` (path traversal via redirect mock, fixed in 4.1.11) were left alone. Moderate does not stop the build by design, and a test-runner bump does not belong in the same diff as a security fix.
+
 ## Checking it yourself
 
 ```bash
