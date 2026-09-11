@@ -1,3 +1,5 @@
+import type { RigSettle } from './rigSettle'
+
 export type Difficulty = 'Easy' | 'Medium' | 'Hard' | 'Expert'
 export type VoiceGender = 'male' | 'female'
 
@@ -27,6 +29,12 @@ export interface InterviewerProfile {
    * артборд має зайвий відступ і персонаж виглядає задрібним у колі.
    */
   avatarScale?: number
+  /**
+   * Задається лише для ригів, чий кадр у спокої не годиться показувати — див.
+   * rigSettle.ts. Без нього плитка, яку ніхто не наводить, завмирає на
+   * початковій позі state machine, як і було з DIA-201.
+   */
+  settle?: RigSettle
   /** Порядковий номер персони в 5-стадійному пайплайні найму (1-4; Stage 5 — Final Offer без персони). */
   pipelineStage: 1 | 2 | 3 | 4
 }
@@ -54,6 +62,13 @@ export const INTERVIEWERS: InterviewerProfile[] = [
     riveFile: 'avatar_senior_devops.riv',
     // Оригінальний вигляд (як був): персонаж вписаний у коло, не обрізаний.
     fit: 'contain',
+    // Єдиний риг, чия поза у спокої — заплющені очі: повіки опущені в самому
+    // артборді, а відкриває їх анімація "Eyelids". Числа заміряні на цьому
+    // файлі (див. rigSettle.ts): перше кліпання — на ~1080 мс, далі кожні
+    // ~1020 мс, а між кліпаннями очі відкриті з ~240 до ~1020 мс. 600 мс —
+    // приблизно середина цього вікна, тож похибка таймера в обидва боки
+    // лишає кадр відкритим.
+    settle: { parkAtMs: 600, cycleMs: 1020 },
     pipelineStage: 2,
   },
   {

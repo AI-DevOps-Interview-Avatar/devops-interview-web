@@ -1,6 +1,7 @@
 import { useRive, Layout, Fit, Alignment } from '@rive-app/react-canvas'
-import { useEffect, useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import type { InterviewerProfile } from '../../domain/models/InterviewerProfile'
+import { msUntilParkFrame } from '../../domain/models/rigSettle'
 import { getCachedRiveBuffer, loadRiveBuffer, riveAssetUrl } from './riveBufferCache'
 import { initRiveRuntime } from './riveRuntime'
 
@@ -36,7 +37,7 @@ interface AvatarTileProps {
    * Off by default, which keeps the meet-session avatar — the one screen
    * where a live face is the point — animating from the moment it mounts.
    *
-   * On: the state machine renders its first frame and then holds still, an
+   * On: the state machine settles onto one frame and then holds still, an
    * idle rig costing the main thread nothing, until a pointer or keyboard
    * focus lands on the tile. Four rigs running their loop at once on
    * `/interview` before the candidate has picked anyone was the bulk of the
@@ -162,14 +163,17 @@ function RiveStage({
   interviewer: InterviewerProfile
   isSpeaking: boolean
   /**
-   * False parks the state machine on its first frame instead of looping it —
-   * the canvas still exists and still shows a face, it just costs nothing
-   * per frame until this flips.
+   * False parks the state machine instead of looping it — the canvas still
+   * exists and still shows a face, it just costs nothing per frame until this
+   * flips. Which frame it parks on is the rig's business: the first one for
+   * most, a measured offset for one that has its eyes shut at rest (see
+   * `settle` and rigSettle.ts).
    */
   active: boolean
 }) {
   const stateMachine = interviewer.stateMachine ?? DEFAULT_STATE_MACHINE
   const scale = interviewer.avatarScale ?? 1
+  const settle = interviewer.settle
   // Cover (дефолт) заповнює коло без полосок; Contain вписує персонажа цілком
   // (оригінальний, менший вигляд наших власних ригів, напр. Marcus).
   const fit = interviewer.fit === 'contain' ? Fit.Contain : Fit.Cover
@@ -186,14 +190,54 @@ function RiveStage({
     layout: new Layout({ fit, alignment: Alignment.Center }),
   })
 
+  // How far the state machine has been advanced, in milliseconds. Rive's
+  // timeline is cumulative across pause/play, so this is enough to work out
+  // which frame a pause would land on — see rigSettle.ts.
+  const advancedMs = useRef(0)
+  const runningSince = useRef<number | null>(null)
+
   useEffect(() => {
     if (!rive) return
-    if (active) {
+
+    const resume = () => {
+      runningSince.current ??= performance.now()
       rive.play(stateMachine)
-    } else {
+    }
+
+    const park = () => {
+      if (runningSince.current !== null) {
+        advancedMs.current += performance.now() - runningSince.current
+        runningSince.current = null
+      }
       rive.pause(stateMachine)
     }
-  }, [rive, active, stateMachine])
+
+    if (active) {
+      resume()
+      return
+    }
+
+    // Rigs whose opening pose is already a face stop where they are, exactly as
+    // DIA-201 left them.
+    if (!settle) {
+      park()
+      return
+    }
+
+    const advanced = advancedMs.current + (runningSince.current === null ? 0 : performance.now() - runningSince.current)
+    const wait = msUntilParkFrame(advanced, settle)
+    if (wait === 0) {
+      park()
+      return
+    }
+
+    // Runs on mount (advance 0, so the full parkAtMs) and again every time the
+    // pointer leaves, which is what keeps the frozen tile identical whether or
+    // not anyone has hovered it.
+    resume()
+    const handle = window.setTimeout(park, wait)
+    return () => window.clearTimeout(handle)
+  }, [rive, active, stateMachine, settle])
 
   useEffect(() => {
     if (!rive) return
