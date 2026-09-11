@@ -90,6 +90,11 @@ button {
   --page-max: none;
   background: linear-gradient(180deg, #070b14 0%, #0b1220 60%, #070b14 100%);
   overflow: hidden;
+  /* So .page__inner can claim the full height and put the footer at the bottom
+     of the screen rather than at the bottom of the content — on a desktop the
+     persona grid ends around 700px and the rest is backdrop. */
+  display: flex;
+  flex-direction: column;
 }
 
 .page__inner {
@@ -97,6 +102,20 @@ button {
   z-index: 1;
   max-width: 1280px;
   margin: 0 auto;
+  /* Full width of the flex parent; `margin: 0 auto` alone would shrink it to
+     its content once .page--hero became a flex container. */
+  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* The grid takes the slack, so the footer lands at the bottom of a tall screen
+   and keeps its own 2.5rem of air on a short one. `margin-top: auto` on the
+   footer would have collapsed that gap to nothing the moment content filled
+   the viewport. */
+.page--hero .card-grid {
+  margin-bottom: auto;
 }
 
 .page__chrome {
@@ -167,6 +186,87 @@ button {
   box-shadow: 0 0 25px rgba(0, 194, 255, 0.4);
   border-color: #00c2ff;
   background: #1c2b3a;
+}
+
+/* The badge on a paid pill. Deliberately quiet — it marks the two screens a
+   plan covers, it is not an advert, and the free screens next to it are the
+   ones the site is actually for. */
+.nav-pill__lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: 0.15rem;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid #6b4f8a;
+  background: #241a33;
+  color: #d8b4fe;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* ---------- Page footer (home screen) ----------
+   Who made this on the left, which build you are running on the right. */
+
+.page__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 2.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #2e303a;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.page__footer a {
+  /* A 13px line of text is still something a thumb has to hit. */
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-target);
+  color: #9ca3af;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.page__footer a:hover {
+  color: #c084fc;
+}
+
+/* ---------- Pro plans ---------- */
+
+.plan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+  gap: 0.75rem;
+}
+
+.plan-card {
+  position: relative;
+  padding: 1.1rem 1rem;
+  border-radius: 12px;
+  border: 1px solid #383944;
+  background: #2a2b33;
+}
+
+.plan-card--recommended {
+  border-color: #c084fc;
+}
+
+.plan-card__flag {
+  position: absolute;
+  top: -10px;
+  left: 1rem;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid #c084fc;
+  background: #241a33;
+  color: #d8b4fe;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 /* ---------- Animated hero background (interviewer-selection page) ---------- */

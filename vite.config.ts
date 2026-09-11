@@ -1,5 +1,6 @@
 import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
+import { appVersion } from './config/appVersion.ts'
 import { headersFile, metaPolicy } from './config/csp.ts'
 
 /**
@@ -45,5 +46,10 @@ function securityHeaders(): Plugin {
 // https://vite.dev/config/
 export default defineConfig({
   base: '/devops-interview-web/',
+  define: {
+    // Read once, at config time: a bug report that names a version is worth
+    // more than one that says "the site".
+    __APP_VERSION__: JSON.stringify(appVersion()),
+  },
   plugins: [react(), securityHeaders()],
 })

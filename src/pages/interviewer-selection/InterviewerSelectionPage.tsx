@@ -1,26 +1,39 @@
-import type { CSSProperties } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { INTERVIEWERS } from '../../domain/models/InterviewerProfile'
+import { isProUnlocked, type ProFeature } from '../../domain/pro'
 import { AvatarTile } from '../../shared/ui/AvatarTile'
+import { AppFooter } from '../../shared/ui/AppFooter'
 import { LanguageSwitcher } from '../../shared/ui/LanguageSwitcher'
 import { HeroBackground } from '../../shared/ui/HeroBackground'
-import { LocalModelInvite } from '../../shared/ui/LocalModelInvite'
+import { EngineNote } from '../../shared/ui/EngineNote'
 import { PrivacyNote } from '../../shared/ui/PrivacyNote'
 
-const NAV_LINKS: { to: string; icon: string; labelKey: string }[] = [
+/**
+ * The row of pills is the product, and only the product.
+ *
+ * Two things left it in DIA-218. "Developers" is an about page and now sits in
+ * the footer; the local engine check is a diagnostic and now sits in the advice
+ * block below, next to the privacy note. Both were being read as a fifth and
+ * sixth thing to try because they were drawn like one.
+ */
+const NAV_LINKS: { to: string; icon: string; labelKey: string; pro?: ProFeature }[] = [
   { to: '/pipeline', icon: '🎯', labelKey: 'selection.pipelineLink' },
-  { to: '/practice', icon: '🧠', labelKey: 'selection.practiceLink' },
-  { to: '/resume-review', icon: '📄', labelKey: 'selection.resumeReviewLink' },
+  { to: '/practice', icon: '🧠', labelKey: 'selection.practiceLink', pro: 'practice' },
+  { to: '/resume-review', icon: '📄', labelKey: 'selection.resumeReviewLink', pro: 'resumeReview' },
   { to: '/resources', icon: '💼', labelKey: 'selection.resourcesLink' },
-  { to: '/developers', icon: '👨‍💻', labelKey: 'selection.developersLink' },
   { to: '/history', icon: '📈', labelKey: 'selection.historyLink' },
-  { to: '/engine', icon: '⚙️', labelKey: 'selection.engineLink' },
 ]
 
 export default function InterviewerSelectionPage() {
   const navigate = useNavigate()
   const { t } = useTranslation()
+
+  // Read once. The entitlement cannot change without a reload — there is no
+  // checkout in the page to change it — and re-reading storage on every render
+  // would only make that look otherwise.
+  const [proUnlocked] = useState(isProUnlocked)
 
   return (
     <main className="page page--hero">
@@ -36,12 +49,29 @@ export default function InterviewerSelectionPage() {
           <h1 style={{ margin: 0 }}>{t('selection.title')}</h1>
           <p style={{ color: '#9ca3af' }}>{t('selection.subtitle')}</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', marginTop: '0.75rem' }}>
-            {NAV_LINKS.map((link) => (
-              <Link key={link.to} to={link.to} className="nav-pill">
-                <span aria-hidden="true">{link.icon}</span>
-                {t(link.labelKey)}
-              </Link>
-            ))}
+            {NAV_LINKS.map((link) => {
+              const locked = link.pro !== undefined && !proUnlocked
+              return (
+                <Link
+                  key={link.to}
+                  // A locked pill leads to the price, not to a door that closes
+                  // in the visitor's face. The route itself is gated too — see
+                  // ProGate — for everyone who arrives by link rather than pill.
+                  to={locked ? `/pro?feature=${link.pro}` : link.to}
+                  className="nav-pill"
+                  data-testid={locked ? 'nav-pill-locked' : 'nav-pill'}
+                  data-pro-feature={link.pro}
+                >
+                  <span aria-hidden="true">{link.icon}</span>
+                  {t(link.labelKey)}
+                  {locked && (
+                    <span className="nav-pill__lock">
+                      <span aria-hidden="true">🔒</span> {t('pro.badge')}
+                    </span>
+                  )}
+                </Link>
+              )
+            })}
           </div>
         </header>
 
@@ -51,8 +81,8 @@ export default function InterviewerSelectionPage() {
           <PrivacyNote dismissible />
           {/* Below the privacy note on purpose: where the answers go is something
               a candidate needs to know, while the local model is something they
-              may want. Only shown on machines that can actually run it. */}
-          <LocalModelInvite />
+              may want. */}
+          <EngineNote />
         </div>
 
         <div className="card-grid">
@@ -90,6 +120,8 @@ export default function InterviewerSelectionPage() {
             </button>
           ))}
         </div>
+
+        <AppFooter />
       </div>
     </main>
   )

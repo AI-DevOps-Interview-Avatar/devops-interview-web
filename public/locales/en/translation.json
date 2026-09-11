@@ -10,9 +10,39 @@
     "pipelineLink": "Full hiring pipeline (5 stages) →",
     "practiceLink": "Practice & quiz →",
     "resumeReviewLink": "Resume review →",
-    "resourcesLink": "Job search resources →",
-    "developersLink": "Developers →",
-    "engineLink": "Local engine check →"
+    "resourcesLink": "Job search resources →"
+  },
+  "footer": {
+    "developers": "Developers"
+  },
+  "pro": {
+    "badge": "PRO",
+    "title": "DevOps Interview Pro",
+    "subtitle": "Two screens sit behind a plan. Everything else — the interviews, the hiring pipeline, the resources, your history — stays free.",
+    "requested": "{{feature}} is part of Pro.",
+    "includedTitle": "What a plan unlocks",
+    "features": {
+      "practice": {
+        "name": "Practice & quiz",
+        "blurb": "The full question bank for all four interviewers, reshuffled whenever you want a new set, plus the scored quiz."
+      },
+      "resumeReview": {
+        "name": "Resume review",
+        "blurb": "An automated checklist over your resume text, scored out of 100 — still without sending a word to a server."
+      }
+    },
+    "plansTitle": "Plans",
+    "plans": {
+      "monthly": { "name": "Monthly", "period": "per month" },
+      "yearly": { "name": "Yearly", "period": "per year" },
+      "lifetime": { "name": "Lifetime", "period": "one payment, no renewal" }
+    },
+    "bestValue": "Best value",
+    "save": "Save {{percent}}%",
+    "notLive": "Payments are not live yet, so nothing can be charged today and no plan can be bought. This is a static site with no server behind it, and a working checkout needs a payment provider — that part is still being built. The prices above are what it will cost when it is.",
+    "notify": "Tell me when Pro opens →",
+    "freeTitle": "Free, and staying free",
+    "freeBody": "Mock interviews with all four interviewers, the five-stage hiring pipeline, the job search resources, the local engine check and your interview history need no plan and never will."
   },
   "difficulty": {
     "Easy": "Easy",
@@ -222,6 +252,10 @@
       "storage-error": "The file could not be stored on this device."
     },
     "requirements": "What this device needs",
+    "check": {
+      "body": "Not sure this browser can run the interviewer on your own machine? The check says what works and what is missing.",
+      "action": "Check this device →"
+    },
     "invite": {
       "title": "This device can run the interviewer locally.",
       "body": "With the model prepared, the interviewer reacts to what you actually said instead of following a script. One {{size}} MB download, kept on this device and never uploaded.",

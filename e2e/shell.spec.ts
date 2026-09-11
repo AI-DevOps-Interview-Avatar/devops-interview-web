@@ -1,6 +1,6 @@
 import { expect, test, type ConsoleMessage, type Page, type Request } from '@playwright/test'
 import { installSpeechStub } from './speechStub'
-import { seedLanguage, waitForQuestion } from './session'
+import { seedLanguage, seedPro, waitForQuestion } from './session'
 
 /**
  * The checklist that used to be manual: avatars drawing, a clean console, and
@@ -55,6 +55,8 @@ test.describe('the shell every screen sits in', () => {
     const watcher = watch(page)
     await installSpeechStub(page, { voices: 'chrome' })
     await seedLanguage(page, 'en')
+    // Otherwise `practice` redirects and this walk covers one screen fewer.
+    await seedPro(page)
 
     for (const screen of ['', 'interview', 'practice', 'resources']) {
       await page.goto(screen)
