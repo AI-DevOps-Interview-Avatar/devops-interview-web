@@ -20,6 +20,10 @@
     "title": "DevOps Interview Pro",
     "subtitle": "Two screens sit behind a plan. Everything else — the interviews, the hiring pipeline, the resources, your history — stays free.",
     "requested": "{{feature}} is part of Pro.",
+    "testerUnlock": {
+      "granted": "Test access is on — Practice & quiz and Resume review are open on this device. This is a tester unlock, not a purchase, and clearing your data removes it.",
+      "back": "Back to the interviewers →"
+    },
     "includedTitle": "What a plan unlocks",
     "features": {
       "practice": {

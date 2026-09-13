@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { seedLanguage, seedPro } from './session'
+import { E2E_UNLOCK_CODE, seedLanguage, seedPro } from './session'
 
 /**
  * The paywall (DIA-218), and the home screen's footer that landed with it.
@@ -88,6 +88,65 @@ test.describe('the Pro gate', () => {
     await page.goto('interview')
     await expect(page.getByTestId('nav-pill-locked')).toHaveCount(0)
     await expect(page.getByTestId('nav-pill')).toHaveCount(5)
+  })
+})
+
+/**
+ * The tester unlock (DIA-228) — the link that exists so nobody has to be talked
+ * through devtools, least of all on a phone where there are none.
+ */
+test.describe('the tester unlock link', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedLanguage(page, 'en')
+  })
+
+  test('opens the paid screens and says it did', async ({ page }) => {
+    await page.goto(`pro?unlock=${E2E_UNLOCK_CODE}`)
+
+    await expect(page.getByTestId('pro-tester-unlocked')).toBeVisible()
+
+    // The code is spent, not kept: a screenshot of this page, or a handed-over
+    // laptop with the history intact, should not be passing it on.
+    await expect(page).toHaveURL(/\/pro$/)
+
+    await page.getByTestId('pro-tester-unlocked-link').click()
+    await expect(page).toHaveURL(/\/interview$/)
+    await expect(page.getByTestId('nav-pill-locked')).toHaveCount(0)
+
+    // And it survives the reload, which is the difference between an unlock and
+    // a banner.
+    await page.goto('practice')
+    await expect(page).toHaveURL(/\/practice$/)
+  })
+
+  test('ignores a wrong code in silence', async ({ page }) => {
+    await page.goto('pro?unlock=not-the-code')
+
+    await expect(page.getByTestId('pro-tester-unlocked')).toHaveCount(0)
+    // No "wrong code" either: telling a guesser they were close is worse than
+    // saying nothing at all.
+    await expect(page.getByTestId('pro-plans')).toBeVisible()
+
+    await page.goto('practice')
+    await expect(page).toHaveURL(/\/pro\?feature=practice$/)
+  })
+
+  test('does not congratulate a visitor who already had a plan', async ({ page }) => {
+    await seedPro(page, 'monthly')
+    await page.goto(`pro?unlock=${E2E_UNLOCK_CODE}`)
+
+    // The banner belongs to the moment access is granted, not to every later
+    // visit to the price list.
+    await expect(page.getByTestId('pro-tester-unlocked')).toHaveCount(0)
+  })
+
+  test('says nothing about a lock it has just opened', async ({ page }) => {
+    // Arriving from a gate and unlocking in the same request: the "this screen
+    // is part of Pro" notice would contradict the banner next to it.
+    await page.goto(`pro?feature=practice&unlock=${E2E_UNLOCK_CODE}`)
+
+    await expect(page.getByTestId('pro-tester-unlocked')).toBeVisible()
+    await expect(page.getByTestId('pro-requested')).toHaveCount(0)
   })
 })
 

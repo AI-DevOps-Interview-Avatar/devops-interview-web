@@ -21,6 +21,11 @@ jobs:
     uses: ./.github/workflows/checks.yml
     with:
       upload-pages-artifact: true
+    # Named rather than `secrets: inherit`: this workflow needs exactly one, and
+    # a list of one is easier to audit than a promise to hand over everything.
+    # Unset is a supported state — the deployed site then has no unlock link.
+    secrets:
+      TESTER_UNLOCK_CODE: ${{ secrets.TESTER_UNLOCK_CODE }}
     # A called workflow does not inherit the block above it, so this repeats the
     # set the build job already had. Narrowing it is a separate change with its
     # own way of going wrong, and this one is about where the checks run.

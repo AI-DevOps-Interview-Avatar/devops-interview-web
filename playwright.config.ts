@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test'
+import { E2E_UNLOCK_CODE } from './e2e/session'
 
 /**
  * Acceptance suite for DIA-166. Runs against the production build, not the dev
@@ -56,5 +57,9 @@ export default defineConfig({
     url: `http://localhost:${PORT}${BASE_PATH}`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
+    // The tester unlock is a build-time constant, so the only way to cover it is
+    // to build with one. Deployed builds take this from a repository secret;
+    // here a fixed value keeps the suite independent of anyone's environment.
+    env: { ...process.env, TESTER_UNLOCK_CODE: E2E_UNLOCK_CODE } as Record<string, string>,
   },
 })

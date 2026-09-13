@@ -41,6 +41,12 @@ All inference and state stay in the browser — no backend server, no API keys, 
 
 The two screens marked *(Pro)* sit behind a plan (**[DIA-218](https://devops-interview-ai.atlassian.net/browse/DIA-218)**); `/pro` lists the prices. **Payments are not live**: this is a static site with no server, so there is nothing to verify a charge against and the pricing screen says so out loud. The entitlement is a `localStorage` flag under the app's own namespace — a product boundary, not a security one, and `src/domain/pro.ts` is explicit about the difference.
 
+Reviewers get at those screens through `/pro?unlock=<code>` (**[DIA-228](https://devops-interview-ai.atlassian.net/browse/DIA-228)**) rather than by being talked through devtools, which is impossible on a phone and alarming everywhere else. The code is a build-time constant from `TESTER_UNLOCK_CODE`; a build made without it — a fork, a local `npm run build` — has no unlock at all. Set it to try the link locally:
+
+```bash
+TESTER_UNLOCK_CODE=something-long-enough npm run build && npm run preview
+```
+
 ## Architecture
 
 Just like the mobile apps, all inference runs on the client — no backend server, no API keys. GitHub Pages only serves static files, so LLM inference runs directly in the browser via WebAssembly/WebGPU (MediaPipe LLM Inference Web API), tracked in epic **[DIA-84](https://devops-interview-ai.atlassian.net/browse/DIA-84)**.

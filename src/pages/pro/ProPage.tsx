@@ -1,8 +1,18 @@
-import { useSearchParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { LanguageSwitcher } from '../../shared/ui/LanguageSwitcher'
 import { PageNav } from '../../shared/ui/PageNav'
-import { PRO_FEATURES, PRO_PLANS, savingPercent, type ProFeature } from '../../domain/pro'
+import {
+  grantProEntitlement,
+  isProUnlocked,
+  PRO_FEATURES,
+  PRO_PLANS,
+  savingPercent,
+  TESTER_UNLOCK_PLAN,
+  unlockCodeMatches,
+  type ProFeature,
+} from '../../domain/pro'
 
 /**
  * Where the announcement will go out. The project's existing channel, not a new
@@ -14,6 +24,46 @@ const NOTIFY_URL = 'https://t.me/+cO9CESqrxkRjNzJi'
 
 function isProFeature(value: string | null): value is ProFeature {
   return PRO_FEATURES.some((feature) => feature === value)
+}
+
+/**
+ * Spends the `?unlock=` parameter, once, before the first paint.
+ *
+ * Run as a `useState` initialiser rather than in an effect so the banner and the
+ * entitlement appear together: an effect would render the price list first and
+ * replace it a frame later, which reads as the page changing its mind.
+ *
+ * The code is then dropped from the address bar. It is not a secret worth
+ * defending — the bundle contains it — but a tester who screenshots this page,
+ * or hands over a laptop with the history intact, should not be passing it on
+ * without meaning to.
+ */
+function useTesterUnlock(code: string | null): boolean {
+  const [granted] = useState(() => {
+    if (!unlockCodeMatches(code)) return false
+
+    // Already had a plan: nothing to grant, and no banner either — that message
+    // belongs to the moment access is given, not to every later visit.
+    if (isProUnlocked()) return false
+
+    return grantProEntitlement(TESTER_UNLOCK_PLAN, 'tester') !== null
+  })
+
+  // In an effect rather than beside the grant above: rewriting the address bar
+  // is a side effect, and one frame later is soon enough for something nobody
+  // is looking at. `replaceState` keeps it out of the history rather than adding
+  // a second entry that Back would walk into.
+  useEffect(() => {
+    if (!code) return
+
+    const url = new URL(globalThis.location.href)
+    if (!url.searchParams.has('unlock')) return
+
+    url.searchParams.delete('unlock')
+    globalThis.history.replaceState(null, '', url)
+  }, [code])
+
+  return granted
 }
 
 /**
@@ -30,6 +80,7 @@ export default function ProPage() {
 
   const requested = params.get('feature')
   const feature = isProFeature(requested) ? requested : null
+  const unlocked = useTesterUnlock(params.get('unlock'))
 
   return (
     <main className="page page--wide">
@@ -43,9 +94,35 @@ export default function ProPage() {
         <p style={{ color: '#9ca3af' }}>{t('pro.subtitle')}</p>
       </header>
 
-      {/* Only when a gate sent them here. Opening /pro directly is a question
-          about the price, not about a door that just closed. */}
-      {feature && (
+      {/* The tester link just worked. Said out loud because the alternative is a
+          price list that looks exactly as it did a second ago, leaving the
+          tester to guess whether the link did anything. */}
+      {unlocked && (
+        <p
+          data-testid="pro-tester-unlocked"
+          style={{
+            margin: '0 0 1.25rem',
+            padding: '0.7rem 0.9rem',
+            borderRadius: 12,
+            border: '1px solid #3f6212',
+            background: 'rgba(63, 98, 18, 0.25)',
+            color: '#e5e7eb',
+            fontSize: 14,
+          }}
+        >
+          <span aria-hidden="true">🔓 </span>
+          {t('pro.testerUnlock.granted')}{' '}
+          <Link data-testid="pro-tester-unlocked-link" to="/interview" style={{ color: '#c084fc' }}>
+            {t('pro.testerUnlock.back')}
+          </Link>
+        </p>
+      )}
+
+      {/* Only when a gate sent them here, and only while the door is still shut.
+          Opening /pro directly is a question about the price, not about a door
+          that just closed — and telling a tester a screen is locked in the same
+          breath as unlocking it is worse than saying nothing. */}
+      {feature && !unlocked && (
         <p
           data-testid="pro-requested"
           style={{

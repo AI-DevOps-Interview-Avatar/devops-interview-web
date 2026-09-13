@@ -58,6 +58,16 @@ export async function seedPro(page: Page, plan: 'monthly' | 'yearly' | 'lifetime
   }, plan)
 }
 
+/**
+ * The unlock code the acceptance build is made with — see `webServer.env` in
+ * playwright.config.ts.
+ *
+ * A fixed value rather than a secret: what the specs check is the mechanism, and
+ * a code read from the environment would make the suite pass or fail depending
+ * on whose shell it ran in.
+ */
+export const E2E_UNLOCK_CODE = 'e2e-tester-unlock-code'
+
 export const interviewerMessages = (page: Page) => page.locator('[data-testid="message"][data-author="interviewer"]')
 export const userMessages = (page: Page) => page.locator('[data-testid="message"][data-author="user"]')
 
