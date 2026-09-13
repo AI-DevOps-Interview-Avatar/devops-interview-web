@@ -1,6 +1,7 @@
 import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import { appVersion } from './config/appVersion.ts'
+import { testerUnlockCode } from './config/testerUnlock.ts'
 import { headersFile, metaPolicy } from './config/csp.ts'
 
 /**
@@ -50,6 +51,9 @@ export default defineConfig({
     // Read once, at config time: a bug report that names a version is worth
     // more than one that says "the site".
     __APP_VERSION__: JSON.stringify(appVersion()),
+    // Empty unless TESTER_UNLOCK_CODE was set for this build, which switches
+    // `/pro?unlock=` off entirely — see config/testerUnlock.ts.
+    __TESTER_UNLOCK_CODE__: JSON.stringify(testerUnlockCode()),
   },
   plugins: [react(), securityHeaders()],
 })

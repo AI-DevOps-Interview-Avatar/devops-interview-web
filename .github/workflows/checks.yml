@@ -16,6 +16,14 @@ on:
           pull request builds the same output and throws it away.
         type: boolean
         default: false
+    secrets:
+      TESTER_UNLOCK_CODE:
+        description: >-
+          The code `/pro?unlock=` accepts on the deployed site (DIA-228). Only
+          the deploy caller passes it; without it the built site simply has no
+          unlock, which is the right outcome for a pull request — including one
+          from a fork, where a secret must not travel.
+        required: false
 
 jobs:
   checks:
@@ -53,6 +61,17 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+      # The build that actually ships, made last and on purpose.
+      #
+      # dist/ at this point belongs to the acceptance suite: playwright.config.ts
+      # runs `npm run build` itself, with a fixed TESTER_UNLOCK_CODE so the
+      # unlock can be tested at all. Uploading what the tests left behind would
+      # publish the test code as the real one. Rebuilding here with the secret
+      # settles it, and costs one build on the deploy path only.
+      - run: npm run build
+        if: inputs.upload-pages-artifact
+        env:
+          TESTER_UNLOCK_CODE: ${{ secrets.TESTER_UNLOCK_CODE }}
       # Pages serves 404.html for any unknown path, which is how a client-side
       # router survives a deep link or a refresh.
       - run: cp dist/index.html dist/404.html

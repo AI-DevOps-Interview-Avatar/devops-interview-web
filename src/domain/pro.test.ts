@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { localStorageStub } from '../test/localStorageStub'
 import {
+  grantProEntitlement,
   isProUnlocked,
   PRO_ENTITLEMENT_KEY,
   PRO_FEATURE_ROUTES,
@@ -9,6 +10,8 @@ import {
   proFeatureOf,
   readProEntitlement,
   savingPercent,
+  TESTER_UNLOCK_PLAN,
+  unlockCodeMatches,
 } from './pro'
 import { STORAGE_PREFIX } from '../store/localData'
 
@@ -93,5 +96,76 @@ describe('the stored entitlement', () => {
     // A plan that survived "delete everything" is a trace of the previous person
     // on a shared laptop, and the retention policy promises there are none.
     expect(PRO_ENTITLEMENT_KEY.startsWith(STORAGE_PREFIX)).toBe(true)
+  })
+
+  it('writes a record its own reader accepts', () => {
+    // The pairing that matters: a writer whose output the reader rejects would
+    // unlock nothing and say nothing about why.
+    const storage = localStorageStub()
+
+    const granted = grantProEntitlement('yearly', 'purchase', storage)
+
+    expect(granted).not.toBeNull()
+    expect(readProEntitlement(storage)).toEqual(granted)
+    expect(isProUnlocked(storage)).toBe(true)
+  })
+
+  it('keeps how the entitlement was obtained', () => {
+    // Once checkout exists, "was this bought or unlocked for testing?" has to be
+    // answerable from the record rather than from memory.
+    const storage = localStorageStub()
+    grantProEntitlement(TESTER_UNLOCK_PLAN, 'tester', storage)
+
+    expect(readProEntitlement(storage)?.source).toBe('tester')
+  })
+
+  it('drops a source it does not recognise instead of trusting it', () => {
+    const storage = localStorageStub({
+      [PRO_ENTITLEMENT_KEY]: JSON.stringify({ plan: 'yearly', since: '', source: 'gift' }),
+    })
+
+    // Still a valid entitlement — the plan is what decides that — but the
+    // unknown provenance is not carried forward as if it meant something.
+    expect(readProEntitlement(storage)).toEqual({ plan: 'yearly', since: '' })
+  })
+
+  it('reports a refused write rather than claiming the plan was granted', () => {
+    // Private mode and a full quota both throw here. A caller that drew
+    // "unlocked" over this would be lying to the next reload.
+    const refusing = {
+      setItem: () => {
+        throw new Error('quota exceeded')
+      },
+    }
+
+    expect(grantProEntitlement('monthly', 'purchase', refusing)).toBeNull()
+  })
+})
+
+describe('the tester unlock code', () => {
+  const CODE = 'unlock-code-for-tests'
+
+  it('accepts the code this build was made with', () => {
+    expect(unlockCodeMatches(CODE, CODE)).toBe(true)
+  })
+
+  it('refuses anything else, without hinting how close it was', () => {
+    for (const attempt of ['', 'unlock-code-for-test', 'UNLOCK-CODE-FOR-TESTS', null]) {
+      expect(unlockCodeMatches(attempt, CODE)).toBe(false)
+    }
+  })
+
+  it('matches nothing at all when the build has no code', () => {
+    // The default in every build made without TESTER_UNLOCK_CODE — a fork's CI,
+    // someone's laptop. Without this, an empty `?unlock=` would open the paid
+    // screens everywhere the variable was forgotten.
+    for (const attempt of ['', 'anything', null]) {
+      expect(unlockCodeMatches(attempt, '')).toBe(false)
+    }
+  })
+
+  it('grants a plan with no expiry to explain to a tester', () => {
+    expect(PRO_PLANS.some((plan) => plan.id === TESTER_UNLOCK_PLAN)).toBe(true)
+    expect(TESTER_UNLOCK_PLAN).toBe('lifetime')
   })
 })
